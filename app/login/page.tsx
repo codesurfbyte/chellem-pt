@@ -6,89 +6,70 @@ import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [sent, setSent] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = createClient()
 
-  const redirect = searchParams.get('redirect') ?? '/book'
+  const redirectUrl = searchParams.get('redirect') ?? '/book'
   const authError = searchParams.get('error')
 
   useEffect(() => {
     // 이미 로그인된 경우 리다이렉트
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace(redirect)
+      if (user) router.replace(redirectUrl)
     })
-  }, [redirect, router, supabase])
+  }, [redirectUrl, router, supabase])
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) return
+    if (!email || !password) return
 
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${redirect}`,
-        data: { name: name.trim() || undefined },
-      },
-    })
+    let authError = null
+
+    if (isSignUp) {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: { name: name.trim() || undefined },
+        },
+      })
+      authError = signUpError
+      if (!signUpError) {
+        alert('회원가입 성공! 바로 로그인됩니다.')
+        router.push(redirectUrl)
+      }
+    } else {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+      authError = signInError
+      if (!signInError) {
+        router.push(redirectUrl)
+      }
+    }
 
     setLoading(false)
 
-    if (error) {
-      setError(error.message)
-    } else {
-      setSent(true)
+    if (authError) {
+      // 에러 메시지 한글화 등
+      if (authError.message.includes('Invalid login credentials')) {
+        setError('이메일이나 비밀번호가 맞지 않습니다.')
+      } else if (authError.message.includes('User already registered')) {
+        setError('이미 가입된 계정입니다. 로그인을 선택해주세요.')
+      } else {
+        setError(authError.message)
+      }
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="card p-8 max-w-sm w-full text-center space-y-5">
-          <div className="w-16 h-16 rounded-full bg-[#C8FF00]/10 flex items-center justify-center mx-auto">
-            <svg
-              className="w-8 h-8 text-[#C8FF00]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h2 className="font-display text-2xl font-bold text-white tracking-wide">
-              이메일 확인
-            </h2>
-            <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-              <span className="text-white font-medium">{email}</span>로<br />
-              로그인 링크를 전송했습니다.<br />
-              이메일을 확인해주세요.
-            </p>
-          </div>
-          <p className="text-gray-600 text-xs">
-            스팸 폴더도 확인해보세요
-          </p>
-          <button
-            onClick={() => setSent(false)}
-            className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            다시 시도
-          </button>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -96,13 +77,13 @@ function LoginForm() {
       <div className="card p-8 max-w-sm w-full space-y-6">
         <div>
           <span className="text-xs font-semibold tracking-[0.2em] text-[#C8FF00] uppercase">
-            Welcome
+            {isSignUp ? 'Join Us' : 'Welcome'}
           </span>
           <h1 className="font-display text-3xl font-bold text-white mt-2 tracking-wide">
-            로그인
+            {isSignUp ? '회원가입' : '로그인'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            이메일로 로그인 링크를 받으세요
+            {isSignUp ? '새 계정을 만드세요' : '다시 오신 것을 환영합니다'}
           </p>
         </div>
 
@@ -112,17 +93,19 @@ function LoginForm() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="label">이름 (선택)</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="홍길동"
-              className="input"
-            />
-          </div>
+        <form onSubmit={handleAuth} className="space-y-4">
+          {isSignUp && (
+            <div>
+              <label className="label">이름 (선택)</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="홍길동"
+                className="input"
+              />
+            </div>
+          )}
 
           <div>
             <label className="label">이메일 *</label>
@@ -136,14 +119,26 @@ function LoginForm() {
             />
           </div>
 
+          <div>
+            <label className="label">비밀번호 *</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="******"
+              required
+              className="input"
+            />
+          </div>
+
           {error && (
             <p className="text-red-400 text-xs">{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={loading || !email}
-            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !email || !password}
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -151,18 +146,26 @@ function LoginForm() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                전송 중...
+                처리 중...
               </span>
             ) : (
-              '로그인 링크 받기'
+              isSignUp ? '회원가입' : '로그인'
             )}
           </button>
         </form>
 
-        <p className="text-center text-gray-600 text-xs leading-relaxed">
-          처음 방문이라면 이메일 입력 후 전송된 링크를 클릭하면<br />
-          자동으로 계정이 생성됩니다.
-        </p>
+        <div className="pt-2 text-center text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp)
+              setError('')
+            }}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
+          </button>
+        </div>
       </div>
     </div>
   )

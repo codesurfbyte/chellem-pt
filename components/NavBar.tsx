@@ -51,10 +51,10 @@ export default function NavBar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <span className="text-[#C8FF00] font-display font-bold text-xl tracking-wider">
-            PT
+            CHELLEM
           </span>
           <span className="text-white font-display font-medium text-xl tracking-wide">
-            TRAINER
+            PT
           </span>
         </Link>
 

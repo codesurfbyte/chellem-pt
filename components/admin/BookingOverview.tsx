@@ -63,18 +63,18 @@ export default function BookingOverview() {
 
     // slot_time 기준으로 그룹핑
     const map = new Map<string, GroupedSlot>()
-    ;(data ?? []).forEach((b: BookingRow) => {
-      if (!b.time_slots) return
-      const key = b.time_slots.id
-      if (!map.has(key)) {
-        map.set(key, {
-          slot_id: key,
-          slot_time: b.time_slots.slot_time,
-          bookings: [],
-        })
-      }
-      map.get(key)!.bookings.push(b)
-    })
+      ; (data ?? []).forEach((b: any) => {
+        if (!b.time_slots) return
+        const key = b.time_slots.id
+        if (!map.has(key)) {
+          map.set(key, {
+            slot_id: key,
+            slot_time: b.time_slots.slot_time,
+            bookings: [],
+          })
+        }
+        map.get(key)!.bookings.push(b)
+      })
 
     // slot_time 오름차순 정렬
     const sorted = Array.from(map.values()).sort(

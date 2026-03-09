@@ -76,7 +76,7 @@ export default function WeeklyCalendar() {
       {}
     )
 
-    const myBookingMap = (myBookings ?? []).reduce<Record<string, (typeof myBookings)[0]>>(
+    const myBookingMap = (myBookings ?? []).reduce<Record<string, any>>(
       (acc, b) => {
         if (b) acc[b.slot_id] = b
         return acc
@@ -224,8 +224,8 @@ export default function WeeklyCalendar() {
                             isMyBooking
                               ? 'bg-blue-500/10 border-blue-500/30'
                               : isFull || isPastSlot
-                              ? 'bg-[#0F0F0F] border-[#1A1A1A]'
-                              : 'bg-[#161616] border-[#2A2A2A] hover:border-[#3A3A3A]'
+                                ? 'bg-[#0F0F0F] border-[#1A1A1A]'
+                                : 'bg-[#161616] border-[#2A2A2A] hover:border-[#3A3A3A]'
                           )}
                         >
                           <div className="flex items-center justify-between mb-2">
@@ -235,8 +235,8 @@ export default function WeeklyCalendar() {
                                 isMyBooking
                                   ? 'text-blue-300'
                                   : isFull || isPastSlot
-                                  ? 'text-gray-600'
-                                  : 'text-white'
+                                    ? 'text-gray-600'
+                                    : 'text-white'
                               )}
                             >
                               {formatTime(slot.slot_time)}

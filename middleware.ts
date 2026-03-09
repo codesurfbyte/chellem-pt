@@ -16,7 +16,9 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = NextResponse.next({
+            request,
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -25,6 +27,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // 중요: getUser()를 호출해야만 만료된 라우팅 세션 쿠키가 갱신됩니다.
   const {
     data: { user },
   } = await supabase.auth.getUser()

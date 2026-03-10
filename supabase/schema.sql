@@ -163,6 +163,38 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- =========================================
+-- 트리거: 시간 슬롯 삭제 시 잔여 횟수 복구
+-- =========================================
+
+create or replace function public.handle_time_slot_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- 삭제되는 슬롯에 확정 예약이 있으면 예약자 잔여 횟수 복구
+  update public.profiles p
+  set remaining_sessions = p.remaining_sessions + b.cnt
+  from (
+    select member_id, count(*) as cnt
+    from public.bookings
+    where slot_id = old.id
+      and status = 'confirmed'
+    group by member_id
+  ) b
+  where p.id = b.member_id;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists on_time_slot_delete on public.time_slots;
+create trigger on_time_slot_delete
+  before delete on public.time_slots
+  for each row execute procedure public.handle_time_slot_delete();
+
+-- =========================================
 -- 예약/횟수 처리 함수
 -- =========================================
 

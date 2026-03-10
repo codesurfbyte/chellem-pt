@@ -244,6 +244,7 @@ declare
   v_user uuid;
   v_is_admin boolean;
   v_member uuid;
+  v_slot uuid;
   v_status text;
 begin
   v_user := auth.uid();
@@ -255,7 +256,7 @@ begin
   from public.profiles
   where id = v_user;
 
-  select member_id, status into v_member, v_status
+  select member_id, slot_id, status into v_member, v_slot, v_status
   from public.bookings
   where id = p_booking_id
   for update;
@@ -271,6 +272,12 @@ begin
   if v_status <> 'confirmed' then
     return;
   end if;
+
+  -- 동일 슬롯에 이미 취소된 기록이 있으면 제거 (unique 제약 회피)
+  delete from public.bookings
+  where member_id = v_member
+    and slot_id = v_slot
+    and status = 'cancelled';
 
   update public.bookings
   set status = 'cancelled'

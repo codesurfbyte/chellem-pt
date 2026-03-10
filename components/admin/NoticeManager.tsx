@@ -83,7 +83,7 @@ export default function NoticeManager() {
       {/* 작성/편집 폼 */}
       {showForm && (
         <div className="card-elevated p-5 space-y-4">
-          <h3 className="font-medium text-white text-sm">
+          <h3 className="font-medium text-ink text-sm">
             {editTarget ? '공지 수정' : '새 공지 작성'}
           </h3>
 
@@ -113,7 +113,7 @@ export default function NoticeManager() {
             <div
               onClick={() => setIsPinned(!isPinned)}
               className={`w-10 h-6 rounded-full transition-all flex items-center px-0.5 ${
-                isPinned ? 'bg-[#C8FF00]' : 'bg-[#2A2A2A]'
+                isPinned ? 'bg-brand' : 'bg-sand border border-mist'
               }`}
             >
               <div
@@ -122,7 +122,7 @@ export default function NoticeManager() {
                 }`}
               />
             </div>
-            <span className="text-sm text-gray-400 group-hover:text-gray-300">
+            <span className="text-sm text-slate group-hover:text-ink">
               상단 고정
             </span>
           </label>
@@ -153,7 +153,7 @@ export default function NoticeManager() {
           ))}
         </div>
       ) : notices.length === 0 ? (
-        <div className="card p-8 text-center text-gray-600 text-sm">
+        <div className="card p-8 text-center text-slate text-sm">
           등록된 공지사항이 없습니다
         </div>
       ) : (
@@ -162,7 +162,7 @@ export default function NoticeManager() {
             <div
               key={notice.id}
               className={`card p-4 ${
-                notice.is_pinned ? 'border-[#C8FF00]/20' : ''
+                notice.is_pinned ? 'border-brand/30' : ''
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -171,14 +171,14 @@ export default function NoticeManager() {
                     {notice.is_pinned && (
                       <span className="badge-available text-[10px]">고정</span>
                     )}
-                    <h3 className="text-white font-medium text-sm">
+                    <h3 className="text-ink font-medium text-sm">
                       {notice.title}
                     </h3>
                   </div>
-                  <p className="text-gray-500 text-xs mt-1 line-clamp-2">
+                  <p className="text-slate text-xs mt-1 line-clamp-2">
                     {notice.content}
                   </p>
-                  <p className="text-gray-700 text-xs mt-2">
+                  <p className="text-slate/70 text-xs mt-2">
                     {format(parseISO(notice.created_at), 'yyyy.MM.dd', {
                       locale: ko,
                     })}
@@ -187,13 +187,13 @@ export default function NoticeManager() {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => openEdit(notice)}
-                    className="text-xs px-2 py-1.5 text-gray-500 hover:text-gray-300 hover:bg-[#1E1E1E] rounded transition-all"
+                    className="text-xs px-2 py-1.5 text-slate hover:text-ink hover:bg-sand rounded transition-all"
                   >
                     수정
                   </button>
                   <button
                     onClick={() => handleDelete(notice.id)}
-                    className="text-xs px-2 py-1.5 text-red-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all"
+                    className="text-xs px-2 py-1.5 text-red-600 hover:text-red-500 hover:bg-red-50 rounded transition-all"
                   >
                     삭제
                   </button>

@@ -76,19 +76,19 @@ function LoginForm() {
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="card p-8 max-w-sm w-full space-y-6">
         <div>
-          <span className="text-xs font-semibold tracking-[0.2em] text-[#C8FF00] uppercase">
+          <span className="text-xs font-semibold tracking-[0.14em] text-brand uppercase">
             {isSignUp ? 'Join Us' : 'Welcome'}
           </span>
-          <h1 className="font-display text-3xl font-bold text-white mt-2 tracking-wide">
+          <h1 className="font-display text-3xl font-bold text-ink mt-2 tracking-wide">
             {isSignUp ? '회원가입' : '로그인'}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-slate text-sm mt-1">
             {isSignUp ? '새 계정을 만드세요' : '다시 오신 것을 환영합니다'}
           </p>
         </div>
 
         {authError && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-red-400 text-sm">
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">
             인증에 실패했습니다. 다시 시도해주세요.
           </div>
         )}
@@ -132,7 +132,7 @@ function LoginForm() {
           </div>
 
           {error && (
-            <p className="text-red-400 text-xs">{error}</p>
+            <p className="text-red-600 text-xs">{error}</p>
           )}
 
           <button
@@ -161,7 +161,7 @@ function LoginForm() {
               setIsSignUp(!isSignUp)
               setError('')
             }}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-slate hover:text-ink transition-colors"
           >
             {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
           </button>

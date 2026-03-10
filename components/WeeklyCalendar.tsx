@@ -145,27 +145,27 @@ export default function WeeklyCalendar() {
           onClick={() => setWeekStart(prevWeek(weekStart))}
           disabled={isCurrentWeek}
           className={cn(
-            'w-9 h-9 rounded-lg flex items-center justify-center transition-all',
+            'w-9 h-9 rounded-full flex items-center justify-center transition-all',
             isCurrentWeek
-              ? 'text-gray-700 cursor-not-allowed'
-              : 'text-gray-400 hover:text-white hover:bg-[#1A1A1A]'
+              ? 'text-slate/40 cursor-not-allowed'
+              : 'text-slate hover:text-ink hover:bg-brand/10'
           )}
         >
           ←
         </button>
         <div className="text-center">
-          <p className="text-white font-medium text-sm">
+          <p className="text-ink font-medium text-sm">
             {formatWeekRange(weekStart)}
           </p>
           {isCurrentWeek && (
-            <span className="text-[10px] text-[#C8FF00] font-medium tracking-wide">
+            <span className="text-[10px] text-brand font-medium tracking-wide">
               이번 주
             </span>
           )}
         </div>
         <button
           onClick={() => setWeekStart(nextWeek(weekStart))}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1A1A1A] transition-all"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-slate hover:text-ink hover:bg-brand/10 transition-all"
         >
           →
         </button>
@@ -176,10 +176,10 @@ export default function WeeklyCalendar() {
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="card p-4 animate-pulse">
-              <div className="h-4 bg-[#2A2A2A] rounded w-20 mb-3" />
+              <div className="h-4 bg-sand rounded w-20 mb-3" />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {[...Array(3)].map((_, j) => (
-                  <div key={j} className="h-16 bg-[#1E1E1E] rounded-lg" />
+                  <div key={j} className="h-16 bg-sand rounded-lg" />
                 ))}
               </div>
             </div>
@@ -190,11 +190,11 @@ export default function WeeklyCalendar() {
           {slotsByDay.map(({ day, slots: daySlots }) => (
             <div key={day.toISOString()} className="card overflow-hidden">
               {/* 날짜 헤더 */}
-              <div className="px-4 py-3 border-b border-[#1E1E1E] flex items-center justify-between">
-                <span className="font-display font-semibold text-white tracking-wide text-sm">
+              <div className="px-4 py-3 border-b border-mist flex items-center justify-between bg-surface/70">
+                <span className="font-display font-semibold text-ink tracking-wide text-sm">
                   {formatDate(day)}
                 </span>
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-slate">
                   {daySlots.length > 0
                     ? `${daySlots.filter((s) => s.confirmed_count < s.max_capacity && !s.my_booking).length}개 예약 가능`
                     : '슬롯 없음'}
@@ -204,7 +204,7 @@ export default function WeeklyCalendar() {
               {/* 슬롯 목록 */}
               <div className="p-4">
                 {daySlots.length === 0 ? (
-                  <p className="text-gray-700 text-sm text-center py-2">
+                  <p className="text-slate text-sm text-center py-2">
                     등록된 시간 슬롯이 없습니다
                   </p>
                 ) : (
@@ -222,10 +222,10 @@ export default function WeeklyCalendar() {
                           className={cn(
                             'rounded-lg p-3 border transition-all duration-150',
                             isMyBooking
-                              ? 'bg-blue-500/10 border-blue-500/30'
+                              ? 'bg-sky-100 border-sky-200'
                               : isFull || isPastSlot
-                                ? 'bg-[#0F0F0F] border-[#1A1A1A]'
-                                : 'bg-[#161616] border-[#2A2A2A] hover:border-[#3A3A3A]'
+                                ? 'bg-sand border-mist'
+                                : 'bg-surface border-mist hover:border-brand/30'
                           )}
                         >
                           <div className="flex items-center justify-between mb-2">
@@ -233,10 +233,10 @@ export default function WeeklyCalendar() {
                               className={cn(
                                 'font-display font-semibold text-lg tracking-wide',
                                 isMyBooking
-                                  ? 'text-blue-300'
+                                  ? 'text-sky-700'
                                   : isFull || isPastSlot
-                                    ? 'text-gray-600'
-                                    : 'text-white'
+                                    ? 'text-slate'
+                                    : 'text-ink'
                               )}
                             >
                               {formatTime(slot.slot_time)}
@@ -252,7 +252,7 @@ export default function WeeklyCalendar() {
                             )}
                           </div>
 
-                          <div className="text-xs text-gray-600 mb-3">
+                          <div className="text-xs text-slate mb-3">
                             {slot.confirmed_count}/{slot.max_capacity}명
                           </div>
 
@@ -263,8 +263,8 @@ export default function WeeklyCalendar() {
                                   handleCancel(slot.my_booking!.id, slot.id)
                                 }
                                 disabled={isActioning}
-                                className="w-full text-xs py-1.5 rounded text-blue-400 
-                                           border border-blue-500/20 hover:bg-blue-500/10
+                                className="w-full text-xs py-1.5 rounded-full text-sky-700 
+                                           border border-sky-200 hover:bg-sky-100
                                            transition-all disabled:opacity-50"
                               >
                                 {isActioning ? '처리 중...' : '예약 취소'}
@@ -273,9 +273,9 @@ export default function WeeklyCalendar() {
                               <button
                                 onClick={() => handleBook(slot.id)}
                                 disabled={isActioning}
-                                className="w-full text-xs py-1.5 rounded 
-                                           bg-[#C8FF00]/10 text-[#C8FF00] 
-                                           border border-[#C8FF00]/20 hover:bg-[#C8FF00]/20
+                                className="w-full text-xs py-1.5 rounded-full 
+                                           bg-brand/10 text-brand 
+                                           border border-brand/20 hover:bg-brand/20
                                            transition-all disabled:opacity-50"
                               >
                                 {isActioning ? '처리 중...' : '예약하기'}
@@ -294,15 +294,15 @@ export default function WeeklyCalendar() {
       )}
 
       {/* 범례 */}
-      <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2">
+      <div className="flex flex-wrap gap-4 text-xs text-slate pt-2">
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#C8FF00]/60" /> 예약 가능
+          <span className="w-2 h-2 rounded-full bg-brand/60" /> 예약 가능
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-400/60" /> 내 예약
+          <span className="w-2 h-2 rounded-full bg-sky-400/60" /> 내 예약
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-gray-700" /> 마감/종료
+          <span className="w-2 h-2 rounded-full bg-gray-400" /> 마감/종료
         </span>
       </div>
     </div>

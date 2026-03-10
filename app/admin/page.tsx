@@ -36,26 +36,26 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <span className="text-xs font-semibold tracking-[0.2em] text-[#C8FF00] uppercase">
+        <span className="text-xs font-semibold tracking-[0.14em] text-brand uppercase">
           Admin
         </span>
-        <h1 className="font-display text-4xl font-bold text-white mt-2 tracking-wide">
+        <h1 className="font-display text-4xl font-bold text-ink mt-2 tracking-wide">
           관리자 대시보드
         </h1>
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: '이번주 슬롯', value: slotCount ?? 0 },
           { label: '이번주 예약', value: bookingCount ?? 0 },
           { label: '전체 회원', value: memberCount ?? 0 },
         ].map(({ label, value }) => (
           <div key={label} className="card p-4 text-center">
-            <p className="font-display font-bold text-3xl text-[#C8FF00]">
+            <p className="font-display font-bold text-3xl text-brand">
               {value}
             </p>
-            <p className="text-gray-500 text-xs mt-1">{label}</p>
+            <p className="text-slate text-xs mt-1">{label}</p>
           </div>
         ))}
       </div>

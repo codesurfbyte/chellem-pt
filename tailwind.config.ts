@@ -9,19 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['var(--font-oswald)', 'sans-serif'],
-        body: ['var(--font-dm-sans)', 'sans-serif'],
+        display: ['var(--font-display)', 'sans-serif'],
+        body: ['var(--font-body)', 'sans-serif'],
       },
       colors: {
-        accent: '#C8FF00',
-        dark: {
-          900: '#080808',
-          800: '#0F0F0F',
-          700: '#161616',
-          600: '#1E1E1E',
-          500: '#2A2A2A',
-          400: '#3A3A3A',
+        brand: {
+          DEFAULT: '#018786',
+          dark: '#016A6A',
+          soft: '#E3F4F4',
+          faint: '#F2FAFA',
         },
+        ink: '#222222',
+        slate: '#6B6B6B',
+        canvas: '#FFFFFF',
+        surface: '#FFFFFF',
+        sand: '#F7F7F7',
+        mist: '#E7E7E7',
       },
     },
   },

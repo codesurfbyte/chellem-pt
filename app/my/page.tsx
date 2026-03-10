@@ -38,10 +38,10 @@ export default async function MyPage() {
   return (
     <div className="space-y-8">
       <div>
-        <span className="text-xs font-semibold tracking-[0.2em] text-[#C8FF00] uppercase">
+        <span className="text-xs font-semibold tracking-[0.14em] text-brand uppercase">
           My Schedule
         </span>
-        <h1 className="font-display text-4xl font-bold text-white mt-2 tracking-wide">
+        <h1 className="font-display text-4xl font-bold text-ink mt-2 tracking-wide">
           내 예약
         </h1>
       </div>
@@ -49,29 +49,29 @@ export default async function MyPage() {
       {/* 프로필 카드 */}
       <div className="card p-5 flex items-center justify-between">
         <div>
-          <p className="text-white font-medium">
+          <p className="text-ink font-medium">
             {profile?.name ?? user.email?.split('@')[0]}
           </p>
-          <p className="text-gray-500 text-sm mt-0.5">{user.email}</p>
+          <p className="text-slate text-sm mt-0.5">{user.email}</p>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-display font-bold text-[#C8FF00]">
+          <p className="text-3xl font-display font-bold text-brand">
             {profile?.remaining_sessions ?? 0}
           </p>
-          <p className="text-gray-500 text-xs">잔여 횟수</p>
+          <p className="text-slate text-xs">잔여 횟수</p>
         </div>
       </div>
 
       {/* 예정된 예약 */}
       <section className="space-y-4">
-        <h2 className="font-display text-xl font-semibold text-white tracking-wide flex items-center gap-2">
+        <h2 className="font-display text-xl font-semibold text-ink tracking-wide flex items-center gap-2">
           예정된 PT
           <span className="badge-available">{upcomingBookings.length}</span>
         </h2>
 
         {upcomingBookings.length === 0 ? (
           <div className="card p-8 text-center space-y-3">
-            <p className="text-gray-600 text-sm">예정된 PT가 없습니다</p>
+            <p className="text-slate text-sm">예정된 PT가 없습니다</p>
             <a href="/book" className="btn-primary inline-flex text-sm px-4 py-2">
               예약하러 가기
             </a>
@@ -84,25 +84,25 @@ export default async function MyPage() {
                 className="card p-4 flex items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#C8FF00]/10 flex flex-col items-center justify-center flex-shrink-0">
-                    <span className="text-[#C8FF00] font-display font-bold text-lg leading-none">
+                  <div className="w-12 h-12 rounded-lg bg-brand/10 flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-brand font-display font-bold text-lg leading-none">
                       {format(parseISO(booking.time_slots!.slot_time), 'd')}
                     </span>
-                    <span className="text-[#C8FF00]/60 text-[10px]">
+                    <span className="text-brand/70 text-[10px]">
                       {format(parseISO(booking.time_slots!.slot_time), 'EEE', {
                         locale: ko,
                       })}
                     </span>
                   </div>
                   <div>
-                    <p className="text-white font-medium">
+                    <p className="text-ink font-medium">
                       {format(
                         parseISO(booking.time_slots!.slot_time),
                         'yyyy년 M월 d일 HH:mm',
                         { locale: ko }
                       )}
                     </p>
-                    <p className="text-gray-500 text-xs mt-0.5">
+                    <p className="text-slate text-xs mt-0.5">
                       예약 확정됨
                     </p>
                   </div>
@@ -117,7 +117,7 @@ export default async function MyPage() {
       {/* 지난 예약 */}
       {pastBookings.length > 0 && (
         <section className="space-y-4">
-          <h2 className="font-display text-xl font-semibold text-gray-500 tracking-wide">
+          <h2 className="font-display text-xl font-semibold text-slate tracking-wide">
             지난 PT
           </h2>
           <div className="space-y-2">
@@ -126,17 +126,17 @@ export default async function MyPage() {
                 key={booking.id}
                 className="card p-4 flex items-center gap-4 opacity-40"
               >
-                <div className="w-12 h-12 rounded-xl bg-[#1A1A1A] flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-gray-500 font-display font-bold text-lg leading-none">
+                <div className="w-12 h-12 rounded-lg bg-sand flex flex-col items-center justify-center flex-shrink-0">
+                  <span className="text-slate font-display font-bold text-lg leading-none">
                     {format(parseISO(booking.time_slots!.slot_time), 'd')}
                   </span>
-                  <span className="text-gray-700 text-[10px]">
+                  <span className="text-slate/70 text-[10px]">
                     {format(parseISO(booking.time_slots!.slot_time), 'EEE', {
                       locale: ko,
                     })}
                   </span>
                 </div>
-                <p className="text-gray-500 text-sm">
+                <p className="text-slate text-sm">
                   {format(
                     parseISO(booking.time_slots!.slot_time),
                     'yyyy년 M월 d일 HH:mm',

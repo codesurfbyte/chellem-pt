@@ -123,23 +123,23 @@ export default function SlotManager() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setWeekStart(prevWeek(weekStart))}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1E1E1E] transition-all"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate hover:text-ink hover:bg-brand/10 transition-all"
           >
             ←
           </button>
-          <span className="text-white text-sm font-medium">
+          <span className="text-ink text-sm font-medium">
             {formatWeekRange(weekStart)}
           </span>
           <button
             onClick={() => setWeekStart(nextWeek(weekStart))}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1E1E1E] transition-all"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate hover:text-ink hover:bg-brand/10 transition-all"
           >
             →
           </button>
         </div>
         <button
           onClick={() => setBulkMode(!bulkMode)}
-          className={cn('btn-primary text-xs px-4 py-2', bulkMode && 'bg-gray-700 text-white hover:bg-gray-600')}
+          className={cn('btn-primary text-xs px-4 py-2', bulkMode && 'bg-slate text-white hover:bg-slate/90')}
         >
           {bulkMode ? '취소' : '+ 슬롯 일괄 생성'}
         </button>
@@ -148,7 +148,7 @@ export default function SlotManager() {
       {/* 벌크 생성 패널 */}
       {bulkMode && (
         <div className="card-elevated p-5 space-y-5">
-          <h3 className="font-medium text-white text-sm">슬롯 일괄 생성</h3>
+          <h3 className="font-medium text-ink text-sm">슬롯 일괄 생성</h3>
 
           {/* 요일 선택 */}
           <div>
@@ -161,8 +161,8 @@ export default function SlotManager() {
                   className={cn(
                     'w-10 h-10 rounded-lg text-sm font-medium transition-all',
                     selectedDays.includes(i)
-                      ? 'bg-[#C8FF00] text-black'
-                      : 'bg-[#1E1E1E] text-gray-400 hover:text-white border border-[#2A2A2A]'
+                      ? 'bg-brand text-white'
+                      : 'bg-surface text-slate hover:text-ink border border-mist'
                   )}
                 >
                   {day}
@@ -182,8 +182,8 @@ export default function SlotManager() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
                     selectedTimes.includes(time)
-                      ? 'bg-[#C8FF00] text-black'
-                      : 'bg-[#1E1E1E] text-gray-400 hover:text-white border border-[#2A2A2A]'
+                      ? 'bg-brand text-white'
+                      : 'bg-surface text-slate hover:text-ink border border-mist'
                   )}
                 >
                   {time}
@@ -205,7 +205,7 @@ export default function SlotManager() {
                 className="input w-24"
               />
             </div>
-            <div className="text-xs text-gray-500 pb-3">
+            <div className="text-xs text-slate pb-3">
               총 {selectedDays.length * selectedTimes.length}개 슬롯 생성 예정
             </div>
           </div>
@@ -231,17 +231,17 @@ export default function SlotManager() {
         <div className="space-y-3">
           {slotsByDay.map(({ day, slots: daySlots }) => (
             <div key={day.toISOString()} className="card overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-[#1E1E1E] bg-[#0F0F0F] flex items-center justify-between">
-                <span className="text-sm font-medium text-white">
+              <div className="px-4 py-2.5 border-b border-mist bg-sand flex items-center justify-between">
+                <span className="text-sm font-medium text-ink">
                   {formatDate(day)}
                 </span>
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-slate">
                   {daySlots.length}개 슬롯
                 </span>
               </div>
 
               {daySlots.length === 0 ? (
-                <div className="px-4 py-4 text-xs text-gray-700 text-center">
+                <div className="px-4 py-4 text-xs text-slate text-center">
                   슬롯 없음
                 </div>
               ) : (
@@ -249,19 +249,19 @@ export default function SlotManager() {
                   {daySlots.map((slot) => (
                     <div
                       key={slot.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-[#161616] border border-[#222222] gap-3"
+                      className="flex items-center justify-between p-3 rounded-lg bg-surface border border-mist gap-3"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="font-display font-semibold text-white text-lg w-14 flex-shrink-0">
+                        <span className="font-display font-semibold text-ink text-lg w-14 flex-shrink-0">
                           {formatTime(slot.slot_time)}
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-slate">
                               {slot.bookings.length}/{slot.max_capacity}명
                             </span>
                             {slot.bookings.length > 0 && (
-                              <span className="text-xs text-gray-600 truncate">
+                              <span className="text-xs text-slate/70 truncate">
                                 {slot.bookings
                                   .map((b) => b.profiles?.name ?? '이름없음')
                                   .join(', ')}
@@ -272,7 +272,7 @@ export default function SlotManager() {
                       </div>
                       <button
                         onClick={() => handleDeleteSlot(slot.id)}
-                        className="text-gray-600 hover:text-red-400 transition-colors text-lg flex-shrink-0"
+                        className="text-slate hover:text-red-500 transition-colors text-lg flex-shrink-0"
                         title="삭제"
                       >
                         ×

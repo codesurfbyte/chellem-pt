@@ -57,11 +57,11 @@ export default function MemberManager() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-gray-500 text-sm">총 {members.length}명</p>
+        <p className="text-slate text-sm">총 {members.length}명</p>
       </div>
 
       {members.length === 0 ? (
-        <div className="card p-8 text-center text-gray-600 text-sm">
+        <div className="card p-8 text-center text-slate text-sm">
           등록된 회원이 없습니다
         </div>
       ) : (
@@ -112,19 +112,19 @@ export default function MemberManager() {
                 </div>
               ) : (
                 // 표시 모드
-                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-[#1E1E1E] flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-gray-400">
+                    <div className="w-9 h-9 rounded-lg bg-sand flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-slate">
                         {(member.name ?? '?')[0].toUpperCase()}
                       </span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-white text-sm font-medium truncate">
+                      <p className="text-ink text-sm font-medium truncate">
                         {member.name ?? '이름 없음'}
                       </p>
                       {member.is_admin && (
-                        <span className="text-[10px] text-[#C8FF00] font-medium">
+                        <span className="text-[10px] text-brand font-medium">
                           관리자
                         </span>
                       )}
@@ -132,14 +132,14 @@ export default function MemberManager() {
                   </div>
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="text-right">
-                      <p className="text-[#C8FF00] font-display font-bold text-xl">
+                      <p className="text-brand font-display font-bold text-xl">
                         {member.remaining_sessions}
                       </p>
-                      <p className="text-gray-600 text-[10px]">잔여</p>
+                      <p className="text-slate text-[10px]">잔여</p>
                     </div>
                     <button
                       onClick={() => startEdit(member)}
-                      className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-[#1E1E1E]"
+                      className="text-xs text-slate hover:text-ink transition-colors px-3 py-1.5 rounded-lg hover:bg-sand"
                     >
                       편집
                     </button>

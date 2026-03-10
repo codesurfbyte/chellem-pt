@@ -113,14 +113,14 @@ export default function BookingOverview() {
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium transition-all',
               view === v
-                ? 'bg-[#C8FF00] text-black'
-                : 'bg-[#1A1A1A] text-gray-400 border border-[#2A2A2A] hover:text-white'
+                ? 'bg-brand text-white'
+                : 'bg-surface text-slate border border-mist hover:text-ink'
             )}
           >
             {v === 'today' ? '오늘' : '이번 주'}
           </button>
         ))}
-        <span className="text-gray-600 text-xs ml-2">
+        <span className="text-slate text-xs ml-2">
           {format(new Date(), view === 'today' ? 'M월 d일 (EEE)' : 'M월 d일 주', { locale: ko })}
         </span>
       </div>
@@ -129,16 +129,16 @@ export default function BookingOverview() {
       {!loading && (
         <div className="flex gap-4">
           <div className="card px-4 py-3 flex items-center gap-3">
-            <span className="text-2xl font-display font-bold text-[#C8FF00]">
+            <span className="text-2xl font-display font-bold text-brand">
               {slots.length}
             </span>
-            <span className="text-gray-500 text-xs">PT 슬롯</span>
+            <span className="text-slate text-xs">PT 슬롯</span>
           </div>
           <div className="card px-4 py-3 flex items-center gap-3">
-            <span className="text-2xl font-display font-bold text-[#C8FF00]">
+            <span className="text-2xl font-display font-bold text-brand">
               {totalBookings}
             </span>
-            <span className="text-gray-500 text-xs">총 예약 인원</span>
+            <span className="text-slate text-xs">총 예약 인원</span>
           </div>
         </div>
       )}
@@ -152,7 +152,7 @@ export default function BookingOverview() {
         </div>
       ) : slots.length === 0 ? (
         <div className="card p-10 text-center">
-          <p className="text-gray-600 text-sm">
+          <p className="text-slate text-sm">
             {view === 'today' ? '오늘 예약된 PT가 없습니다' : '이번 주 예약된 PT가 없습니다'}
           </p>
         </div>
@@ -167,57 +167,57 @@ export default function BookingOverview() {
                 key={slot.slot_id}
                 className={cn(
                   'card overflow-hidden',
-                  todaySlot && view === 'week' && 'border-[#C8FF00]/15'
+                  todaySlot && view === 'week' && 'border-brand/30'
                 )}
               >
                 {/* 슬롯 헤더 */}
-                <div className="px-4 py-3 bg-[#0D0D0D] border-b border-[#1A1A1A] flex items-center justify-between">
+                <div className="px-4 py-3 bg-sand border-b border-mist flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {/* 시간 */}
-                    <span className="font-display font-bold text-white text-xl tracking-wide">
+                    <span className="font-display font-bold text-ink text-xl tracking-wide">
                       {format(slotDate, 'HH:mm')}
                     </span>
                     {/* 날짜 (주간 뷰에서만) */}
                     {view === 'week' && (
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-slate text-sm">
                         {format(slotDate, 'M/d (EEE)', { locale: ko })}
                       </span>
                     )}
                     {todaySlot && view === 'week' && (
-                      <span className="text-[10px] font-semibold text-[#C8FF00] bg-[#C8FF00]/10 border border-[#C8FF00]/20 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold text-brand bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-full">
                         오늘
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-slate">
                     {slot.bookings.length}명 예약
                   </span>
                 </div>
 
                 {/* 예약자 목록 */}
-                <div className="divide-y divide-[#141414]">
+                <div className="divide-y divide-mist">
                   {slot.bookings.map((booking, idx) => (
                     <div
                       key={booking.id}
-                      className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-[#0F0F0F] transition-colors"
+                      className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-sand transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         {/* 순번 */}
-                        <span className="w-5 h-5 rounded-full bg-[#1E1E1E] text-gray-600 text-[10px] flex items-center justify-center font-medium flex-shrink-0">
+                        <span className="w-5 h-5 rounded-full bg-sand text-slate text-[10px] flex items-center justify-center font-medium flex-shrink-0">
                           {idx + 1}
                         </span>
                         {/* 이름/아바타 */}
-                        <div className="w-8 h-8 rounded-lg bg-[#1A1A1A] flex items-center justify-center flex-shrink-0">
-                          <span className="text-gray-400 font-medium text-sm">
+                        <div className="w-8 h-8 rounded-lg bg-sand flex items-center justify-center flex-shrink-0">
+                          <span className="text-slate font-medium text-sm">
                             {(booking.profiles?.name ?? '?')[0]}
                           </span>
                         </div>
                         <div>
-                          <p className="text-white text-sm font-medium">
+                          <p className="text-ink text-sm font-medium">
                             {booking.profiles?.name ?? '이름 없음'}
                           </p>
                           {booking.profiles?.phone && (
-                            <p className="text-gray-600 text-xs mt-0.5">
+                            <p className="text-slate text-xs mt-0.5">
                               {booking.profiles.phone}
                             </p>
                           )}
@@ -231,8 +231,8 @@ export default function BookingOverview() {
                             className={cn(
                               'text-xs font-medium',
                               (booking.profiles?.remaining_sessions ?? 0) <= 2
-                                ? 'text-red-400'
-                                : 'text-gray-500'
+                                ? 'text-red-500'
+                                : 'text-slate'
                             )}
                           >
                             잔여 {booking.profiles?.remaining_sessions ?? 0}회
@@ -245,7 +245,7 @@ export default function BookingOverview() {
                         <button
                           onClick={() => handleCancelBooking(booking.id)}
                           disabled={cancellingId === booking.id}
-                          className="text-gray-700 hover:text-red-400 transition-colors text-lg disabled:opacity-50"
+                          className="text-slate hover:text-red-500 transition-colors text-lg disabled:opacity-50"
                           title="예약 취소"
                         >
                           {cancellingId === booking.id ? '…' : '×'}

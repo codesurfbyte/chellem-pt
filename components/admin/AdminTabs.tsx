@@ -22,16 +22,16 @@ export default function AdminTabs() {
   return (
     <div className="space-y-5">
       {/* 탭 네비게이션 */}
-      <div className="flex gap-1 bg-[#111111] border border-[#1E1E1E] rounded-xl p-1">
+      <div className="flex gap-1 bg-sand border border-mist rounded-2xl p-1">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all',
+              'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all',
               activeTab === tab.id
-                ? 'bg-[#1E1E1E] text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-300'
+                ? 'bg-surface text-ink shadow-sm'
+                : 'text-slate hover:text-ink'
             )}
           >
             <span className="text-base">{tab.icon}</span>

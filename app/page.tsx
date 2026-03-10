@@ -26,18 +26,19 @@ export default async function HomePage() {
       <section className="pt-8 pb-4">
         <div className="space-y-4">
           <div className="inline-block">
-            <span className="text-xs font-semibold tracking-[0.2em] text-[#C8FF00] uppercase">
-              Personal Training
+            <span className="text-xs font-semibold tracking-[0.14em] text-brand uppercase">
+              Coachly Personal Training
             </span>
           </div>
-          <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-none tracking-tight">
-            TRAIN
+          <h1 className="font-display text-4xl md:text-6xl font-bold text-ink leading-tight tracking-tight">
+            목표에 맞춘
             <br />
-            <span className="text-[#C8FF00]">SMARTER</span>
+            <span className="text-brand">스마트 PT 예약</span>
           </h1>
-          <p className="text-gray-400 text-base md:text-lg max-w-sm leading-relaxed">
-            원하는 시간대를 직접 선택하고 <br className="hidden md:block" />
-            트레이너와 함께 목표를 이뤄보세요.
+          <p className="text-slate text-base md:text-lg max-w-md leading-relaxed">
+            원하는 시간대를 바로 선택하고,
+            <br className="hidden md:block" />
+            트레이너와 함께 루틴을 완성하세요.
           </p>
         </div>
 
@@ -65,19 +66,19 @@ export default async function HomePage() {
       </section>
 
       {/* 구분선 */}
-      <div className="h-px bg-gradient-to-r from-transparent via-[#2A2A2A] to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-mist to-transparent" />
 
       {/* 공지사항 */}
       <section className="space-y-5">
         <div className="flex items-center gap-3">
-          <h2 className="font-display text-2xl font-semibold text-white tracking-wide">
+          <h2 className="font-display text-2xl font-semibold text-ink tracking-wide">
             NOTICE
           </h2>
-          <span className="text-gray-600 font-body text-sm">공지사항</span>
+          <span className="text-slate font-body text-sm">공지사항</span>
         </div>
 
         {notices.length === 0 ? (
-          <div className="card p-8 text-center text-gray-600 text-sm">
+          <div className="card p-8 text-center text-slate text-sm">
             등록된 공지사항이 없습니다.
           </div>
         ) : (
@@ -85,15 +86,15 @@ export default async function HomePage() {
             {notices.map((notice) => (
               <div
                 key={notice.id}
-                className={`card p-5 transition-colors hover:border-[#2A2A2A] ${
-                  notice.is_pinned ? 'border-[#C8FF00]/20 bg-[#C8FF00]/[0.02]' : ''
+                className={`card p-5 transition-colors hover:border-brand/30 ${
+                  notice.is_pinned ? 'border-brand/30 bg-brand/5' : ''
                 }`}
               >
                 <div className="flex items-start gap-3">
                   {notice.is_pinned && (
                     <span className="mt-0.5 flex-shrink-0">
                       <svg
-                        className="w-4 h-4 text-[#C8FF00]"
+                        className="w-4 h-4 text-brand"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                       >
@@ -103,17 +104,17 @@ export default async function HomePage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-white text-sm">
+                      <h3 className="font-medium text-ink text-sm">
                         {notice.title}
                       </h3>
                       {notice.is_pinned && (
                         <span className="badge-available">고정</span>
                       )}
                     </div>
-                    <p className="text-gray-400 text-sm mt-1.5 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-slate text-sm mt-1.5 leading-relaxed whitespace-pre-wrap">
                       {notice.content}
                     </p>
-                    <p className="text-gray-600 text-xs mt-3">
+                    <p className="text-slate/70 text-xs mt-3">
                       {format(parseISO(notice.created_at), 'yyyy.MM.dd', {
                         locale: ko,
                       })}
@@ -128,10 +129,10 @@ export default async function HomePage() {
 
       {/* 하단 CTA */}
       <section className="card-elevated p-8 text-center space-y-4">
-        <p className="font-display text-2xl font-semibold text-white tracking-wide">
+        <p className="font-display text-2xl font-semibold text-ink tracking-wide">
           지금 바로 예약하세요
         </p>
-        <p className="text-gray-500 text-sm">
+        <p className="text-slate text-sm">
           매주 새로운 시간표가 업데이트됩니다
         </p>
         <Link href="/book" className="btn-primary inline-flex">

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -46,16 +47,28 @@ export default function NavBar() {
   ]
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#080808]/90 backdrop-blur-md border-b border-[#1A1A1A]">
-      <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-surface border-b border-mist">
+      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-[#C8FF00] font-display font-bold text-xl tracking-wider">
-            CHELLEM
-          </span>
-          <span className="text-white font-display font-medium text-xl tracking-wide">
-            PT
-          </span>
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative w-20 h-20">
+            <Image
+              src="/coachly-logo.png"
+              alt="Coachly"
+              fill
+              sizes="120px"
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div className="leading-tight">
+            <span className="block font-display text-lg text-ink tracking-wide">
+              Chellem PT
+            </span>
+            <span className="block text-xs tracking-wide text-slate">
+              예약 센터
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Nav */}
@@ -65,10 +78,10 @@ export default function NavBar() {
               key={link.href}
               href={link.href}
               className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                'px-4 py-2 rounded-md text-sm font-medium transition-all duration-150',
                 pathname === link.href
-                  ? 'bg-[#C8FF00]/10 text-[#C8FF00]'
-                  : 'text-gray-400 hover:text-white hover:bg-[#1A1A1A]'
+                  ? 'bg-brand/10 text-brand'
+                  : 'text-slate hover:text-ink hover:bg-brand/10'
               )}
             >
               {link.label}
@@ -80,18 +93,18 @@ export default function NavBar() {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 truncate max-w-[140px]">
+              <span className="text-xs text-slate truncate max-w-[160px]">
                 {user.email}
               </span>
               <button
                 onClick={handleLogout}
-                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-xs text-slate hover:text-ink transition-colors"
               >
                 로그아웃
               </button>
             </div>
           ) : (
-            <Link href="/login" className="btn-primary text-sm px-4 py-2">
+            <Link href="/login" className="btn-primary text-sm px-5 py-2.5">
               로그인
             </Link>
           )}
@@ -100,7 +113,7 @@ export default function NavBar() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden p-2 text-gray-400 hover:text-white"
+          className="md:hidden p-2 text-slate hover:text-ink"
         >
           <div className="w-5 space-y-1.5">
             <span
@@ -127,29 +140,29 @@ export default function NavBar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-[#1A1A1A] bg-[#0F0F0F] px-4 py-3 space-y-1">
+        <div className="md:hidden border-t border-mist bg-surface px-4 py-3 space-y-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
               className={cn(
-                'block px-4 py-2.5 rounded-lg text-sm font-medium transition-all',
+                'block px-4 py-2.5 rounded-md text-sm font-medium transition-all',
                 pathname === link.href
-                  ? 'bg-[#C8FF00]/10 text-[#C8FF00]'
-                  : 'text-gray-400 hover:text-white hover:bg-[#1A1A1A]'
+                  ? 'bg-brand/10 text-brand'
+                  : 'text-slate hover:text-ink hover:bg-brand/10'
               )}
             >
               {link.label}
             </Link>
           ))}
-          <div className="pt-2 border-t border-[#1A1A1A]">
+          <div className="pt-2 border-t border-mist">
             {user ? (
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-xs text-gray-500 truncate">{user.email}</span>
+                <span className="text-xs text-slate truncate">{user.email}</span>
                 <button
                   onClick={handleLogout}
-                  className="text-xs text-red-400 hover:text-red-300"
+                  className="text-xs text-red-600 hover:text-red-500"
                 >
                   로그아웃
                 </button>
@@ -158,7 +171,7 @@ export default function NavBar() {
               <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm font-medium text-[#C8FF00]"
+                className="block px-4 py-2.5 text-sm font-medium text-brand"
               >
                 로그인 →
               </Link>

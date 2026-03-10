@@ -18,10 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="min-h-screen bg-[#080808] font-body">
+      <body className="min-h-screen font-body text-ink">
         <NavBar />
-        <main className="max-w-4xl mx-auto px-4 py-8">{children}</main>
-        <footer className="text-center text-gray-700 text-xs py-8">
+        <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>
+        <footer className="text-center text-slate/70 text-xs py-10">
           © {new Date().getFullYear()} PT 예약 센터
         </footer>
       </body>

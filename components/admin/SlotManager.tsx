@@ -50,10 +50,10 @@ export default function SlotManager() {
   const [capacity, setCapacity] = useState(1)
   const [addingWeek, setAddingWeek] = useState(false)
   const [copyingTarget, setCopyingTarget] = useState<'prev' | 'next' | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editTime, setEditTime] = useState('06:00')
-  const [editCapacity, setEditCapacity] = useState(1)
-  const [savingEdit, setSavingEdit] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editingWeekStart, setEditingWeekStart] = useState(() =>
+    toISODateString(getWeekStart())
+  )
 
   const supabase = createClient()
   const weekDays = getWeekDays(weekStart)
@@ -85,9 +85,31 @@ export default function SlotManager() {
     fetchSlots()
   }, [fetchSlots])
 
+  const computeWeeklyTimesFromSlots = useCallback(
+    (baseWeekStart: Date, baseSlots: SlotWithBookings[]) => {
+      const baseWeekStartStr = toISODateString(baseWeekStart)
+      const weekSlots = baseSlots.filter((s) => s.week_start === baseWeekStartStr)
+      const next = emptyWeekTimes()
+
+      weekSlots.forEach((slot) => {
+        const slotDate = parseISO(slot.slot_time)
+        const dayIndex = weekDays.findIndex((d) => isSameDay(d, slotDate))
+        if (dayIndex === -1) return
+        const time = slotDate.toTimeString().slice(0, 5)
+        const list = new Set(next[dayIndex] ?? [])
+        list.add(time)
+        next[dayIndex] = Array.from(list).sort()
+      })
+
+      return next
+    },
+    [emptyWeekTimes, weekDays]
+  )
+
   useEffect(() => {
+    if (editMode) return
     setWeeklyTimes(emptyWeekTimes())
-  }, [weekStart, emptyWeekTimes])
+  }, [weekStart, emptyWeekTimes, editMode])
 
   const selectedWeekSlots = useMemo(() => {
     return weekDays.flatMap((day, dayIndex) =>
@@ -156,6 +178,78 @@ export default function SlotManager() {
     await fetchSlots()
   }
 
+  const handleUpdateWeekSlots = async () => {
+    const baseWeekStart = parseISO(editingWeekStart)
+    const baseWeekStartStr = toISODateString(baseWeekStart)
+    const targetSlots = slots.filter((s) => s.week_start === baseWeekStartStr)
+
+    if (targetSlots.length === 0) {
+      alert('수정할 주간 슬롯이 없습니다.')
+      return
+    }
+
+    const targetBookedSlots = targetSlots.filter((s) => s.bookings.length > 0)
+
+    const bookedTimeSet = new Set(
+      targetBookedSlots.map((s) => s.slot_time)
+    )
+
+    const baseWeekDays = getWeekDays(baseWeekStart)
+    const newSelectedTimes = baseWeekDays.flatMap((day, dayIndex) => {
+      const times = weeklyTimes[dayIndex] ?? []
+      return times.map((time) => {
+        const [h, m] = time.split(':').map(Number)
+        const slotTime = new Date(day)
+        slotTime.setHours(h, m, 0, 0)
+        return slotTime.toISOString()
+      })
+    })
+
+    const newSelectedSet = new Set(newSelectedTimes)
+
+    const deletableSlotIds = targetSlots
+      .filter((s) => !bookedTimeSet.has(s.slot_time))
+      .filter((s) => !newSelectedSet.has(s.slot_time))
+      .map((s) => s.id)
+
+    const missingTimes = newSelectedTimes.filter(
+      (t) =>
+        !targetSlots.some((s) => s.slot_time === t) &&
+        !bookedTimeSet.has(t)
+    )
+
+    if (deletableSlotIds.length === 0 && missingTimes.length === 0) {
+      alert('변경할 내용이 없습니다.')
+      return
+    }
+
+    if (deletableSlotIds.length > 0) {
+      await supabase.from('time_slots').delete().in('id', deletableSlotIds)
+    }
+
+    if (missingTimes.length > 0) {
+      await supabase.from('time_slots').insert(
+        missingTimes.map((t) => ({
+          slot_time: t,
+          max_capacity: capacity,
+          week_start: baseWeekStartStr,
+        }))
+      )
+    }
+
+    if (targetSlots.length > 0) {
+      await supabase
+        .from('time_slots')
+        .update({ max_capacity: capacity })
+        .eq('week_start', baseWeekStartStr)
+    }
+
+    setEditMode(false)
+    setEditingWeekStart(toISODateString(weekStart))
+    setWeeklyTimes(emptyWeekTimes())
+    await fetchSlots()
+  }
+
   const handleCopyToWeek = async (direction: 'prev' | 'next') => {
     if (slots.length === 0) {
       alert('복사할 슬롯이 없습니다.')
@@ -203,48 +297,6 @@ export default function SlotManager() {
 
     await supabase.from('time_slots').insert(insertSlots)
     setCopyingTarget(null)
-    await fetchSlots()
-  }
-
-  const startEdit = (slot: SlotWithBookings) => {
-    setEditingId(slot.id)
-    setEditTime(formatTime(slot.slot_time))
-    setEditCapacity(slot.max_capacity)
-  }
-
-  const cancelEdit = () => {
-    setEditingId(null)
-  }
-
-  const handleSaveEdit = async (slot: SlotWithBookings) => {
-    if (savingEdit) return
-    setSavingEdit(true)
-
-    const baseDate = parseISO(slot.slot_time)
-    const [h, m] = editTime.split(':').map(Number)
-    const nextDate = new Date(baseDate)
-    nextDate.setHours(h, m, 0, 0)
-    const nextSlotTime = nextDate.toISOString()
-
-    if (slot.bookings.length > 0 && nextSlotTime !== slot.slot_time) {
-      alert('예약이 있는 슬롯은 시간 변경이 불가능합니다.')
-      setSavingEdit(false)
-      return
-    }
-
-    if (nextSlotTime !== slot.slot_time && existingSlotTimes.has(nextSlotTime)) {
-      alert('이미 존재하는 시간입니다. 다른 시간을 선택해주세요.')
-      setSavingEdit(false)
-      return
-    }
-
-    await supabase
-      .from('time_slots')
-      .update({ slot_time: nextSlotTime, max_capacity: editCapacity })
-      .eq('id', slot.id)
-
-    setSavingEdit(false)
-    setEditingId(null)
     await fetchSlots()
   }
 
@@ -297,6 +349,22 @@ export default function SlotManager() {
           </button>
           <button
             onClick={() => {
+              if (editMode) {
+                setEditMode(false)
+                setEditingWeekStart(toISODateString(weekStart))
+                setWeeklyTimes(emptyWeekTimes())
+                return
+              }
+              setEditMode(true)
+              setEditingWeekStart(toISODateString(weekStart))
+              setWeeklyTimes(computeWeeklyTimesFromSlots(weekStart, slots))
+            }}
+            className={cn('btn-secondary text-xs px-4 py-2', editMode && 'bg-brand text-white border-brand')}
+          >
+            {editMode ? '주간 수정 취소' : '주간 수정'}
+          </button>
+          <button
+            onClick={() => {
               setWeekAddOpen(!weekAddOpen)
             }}
             className={cn('btn-primary text-xs px-4 py-2', weekAddOpen && 'bg-slate text-white hover:bg-slate/90')}
@@ -307,9 +375,11 @@ export default function SlotManager() {
       </div>
 
       {/* 주간 추가 패널 */}
-      {weekAddOpen && (
+      {(weekAddOpen || editMode) && (
         <div className="card-elevated p-5 space-y-5">
-          <h3 className="font-medium text-ink text-sm">주간 시간 등록</h3>
+          <h3 className="font-medium text-ink text-sm">
+            {editMode ? '주간 시간 수정' : '주간 시간 등록'}
+          </h3>
 
           <div className="space-y-3">
             {weekDays.map((day, dayIndex) => (
@@ -363,22 +433,28 @@ export default function SlotManager() {
               />
             </div>
             <div className="text-xs text-slate pb-3">
-              총 {selectedWeekSlots.length}개 슬롯 추가 예정
+              {editMode
+                ? `선택된 슬롯 ${selectedWeekSlots.length}개로 업데이트 예정`
+                : `총 ${selectedWeekSlots.length}개 슬롯 추가 예정`}
             </div>
           </div>
 
-          {duplicateCount > 0 && (
+          {!editMode && duplicateCount > 0 && (
             <p className="text-xs text-slate">
               이미 존재하는 슬롯 {duplicateCount}개는 추가에서 제외됩니다.
             </p>
           )}
 
           <button
-            onClick={handleAddWeekSlots}
+            onClick={editMode ? handleUpdateWeekSlots : handleAddWeekSlots}
             disabled={addingWeek || selectedWeekSlots.length === 0}
             className="btn-primary text-sm disabled:opacity-50"
           >
-            {addingWeek ? '추가 중...' : `${selectedWeekSlots.length}개 슬롯 추가`}
+            {addingWeek
+              ? '처리 중...'
+              : editMode
+                ? `${selectedWeekSlots.length}개 슬롯 수정`
+                : `${selectedWeekSlots.length}개 슬롯 추가`}
           </button>
         </div>
       )}

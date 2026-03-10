@@ -14,7 +14,7 @@ import {
   cn,
 } from '@/lib/utils'
 import type { TimeSlot, Booking } from '@/lib/types'
-import { parseISO, isSameDay, format, addHours, startOfDay } from 'date-fns'
+import { parseISO, isSameDay, format, addHours, startOfDay, addDays } from 'date-fns'
 
 const TIME_OPTIONS = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
@@ -38,6 +38,7 @@ export default function SlotManager() {
   const [selectedTimes, setSelectedTimes] = useState<string[]>([])
   const [capacity, setCapacity] = useState(1)
   const [processing, setProcessing] = useState(false)
+  const [copying, setCopying] = useState(false)
 
   const supabase = createClient()
   const weekDays = getWeekDays(weekStart)
@@ -158,6 +159,49 @@ export default function SlotManager() {
     await fetchSlots()
   }
 
+  const handleCopyToNextWeek = async () => {
+    if (slots.length === 0) {
+      alert('복사할 슬롯이 없습니다.')
+      return
+    }
+    if (!confirm('이번 주 슬롯을 다음 주로 복사하시겠습니까?')) return
+
+    setCopying(true)
+
+    const targetWeekStart = nextWeek(weekStart)
+    const targetWeekStartStr = toISODateString(targetWeekStart)
+
+    const { data: targetSlots } = await supabase
+      .from('time_slots')
+      .select('slot_time')
+      .eq('week_start', targetWeekStartStr)
+
+    const targetSlotTimes = new Set((targetSlots ?? []).map((s) => s.slot_time))
+
+    const newSlots = slots.map((slot) => ({
+      slot_time: addDays(parseISO(slot.slot_time), 7).toISOString(),
+      max_capacity: slot.max_capacity,
+      week_start: targetWeekStartStr,
+    }))
+
+    const duplicates = newSlots.filter((s) => targetSlotTimes.has(s.slot_time))
+    const insertSlots = newSlots.filter((s) => !targetSlotTimes.has(s.slot_time))
+
+    if (duplicates.length > 0) {
+      alert(`다음 주에 이미 존재하는 슬롯 ${duplicates.length}개는 제외합니다.`)
+    }
+
+    if (insertSlots.length === 0) {
+      alert('복사할 새 슬롯이 없습니다.')
+      setCopying(false)
+      return
+    }
+
+    await supabase.from('time_slots').insert(insertSlots)
+    setCopying(false)
+    await fetchSlots()
+  }
+
   const handleDeleteSlot = async (slotId: string) => {
     if (!confirm('이 슬롯을 삭제하시겠습니까? 관련 예약도 모두 삭제됩니다.')) return
     await supabase.from('time_slots').delete().eq('id', slotId)
@@ -200,19 +244,28 @@ export default function SlotManager() {
             →
           </button>
         </div>
-        <button
-          onClick={() => {
-            setBulkMode(!bulkMode)
-            if (bulkMode) {
-              setBulkAction('create')
-              setSelectedDays([])
-              setSelectedTimes([])
-            }
-          }}
-          className={cn('btn-primary text-xs px-4 py-2', bulkMode && 'bg-slate text-white hover:bg-slate/90')}
-        >
-          {bulkMode ? '취소' : '+ 슬롯 일괄 관리'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyToNextWeek}
+            disabled={copying}
+            className="btn-secondary text-xs px-4 py-2 disabled:opacity-50"
+          >
+            {copying ? '복사 중...' : '다음 주 복사'}
+          </button>
+          <button
+            onClick={() => {
+              setBulkMode(!bulkMode)
+              if (bulkMode) {
+                setBulkAction('create')
+                setSelectedDays([])
+                setSelectedTimes([])
+              }
+            }}
+            className={cn('btn-primary text-xs px-4 py-2', bulkMode && 'bg-slate text-white hover:bg-slate/90')}
+          >
+            {bulkMode ? '취소' : '+ 슬롯 일괄 관리'}
+          </button>
+        </div>
       </div>
 
       {/* 벌크 생성 패널 */}
@@ -284,27 +337,35 @@ export default function SlotManager() {
           </div>
 
           {/* 정원 */}
-          <div className="flex items-end gap-4">
-            <div>
-              <label className="label">정원 (명)</label>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={capacity}
-                onChange={(e) => setCapacity(Number(e.target.value))}
-                className="input w-24"
-              />
+          {bulkAction !== 'delete' && (
+            <div className="flex items-end gap-4">
+              <div>
+                <label className="label">정원 (명)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={capacity}
+                  onChange={(e) => setCapacity(Number(e.target.value))}
+                  className="input w-24"
+                />
+              </div>
+              <div className="text-xs text-slate pb-3">
+                {bulkAction === 'create' && (
+                  <>총 {selectedSlotTimes.length}개 슬롯 생성 예정</>
+                )}
+                {bulkAction === 'update' && (
+                  <>선택된 슬롯 {matchingSlots.length}개에 적용 예정</>
+                )}
+              </div>
             </div>
-            <div className="text-xs text-slate pb-3">
-              {bulkAction === 'create' && (
-                <>총 {selectedSlotTimes.length}개 슬롯 생성 예정</>
-              )}
-              {bulkAction !== 'create' && (
-                <>선택된 슬롯 {matchingSlots.length}개에 적용 예정</>
-              )}
-            </div>
-          </div>
+          )}
+
+          {bulkAction === 'delete' && (
+            <p className="text-xs text-slate">
+              선택된 슬롯 {matchingSlots.length}개를 삭제합니다.
+            </p>
+          )}
 
           {bulkAction === 'create' && duplicateCount > 0 && (
             <p className="text-xs text-slate">

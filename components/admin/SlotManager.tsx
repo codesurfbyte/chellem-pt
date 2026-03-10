@@ -490,86 +490,32 @@ export default function SlotManager() {
                       key={slot.id}
                       className="flex items-center justify-between p-3 rounded-lg bg-surface border border-mist gap-3"
                     >
-                      {editingId === slot.id ? (
-                        <>
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <select
-                              value={editTime}
-                              onChange={(e) => setEditTime(e.target.value)}
-                              className="input w-24"
-                            >
-                              {TIME_OPTIONS.map((time) => (
-                                <option key={time} value={time}>
-                                  {time}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="number"
-                              min={1}
-                              max={10}
-                              value={editCapacity}
-                              onChange={(e) => setEditCapacity(Number(e.target.value))}
-                              className="input w-20"
-                            />
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="font-display font-semibold text-ink text-lg w-14 flex-shrink-0">
+                          {formatTime(slot.slot_time)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-slate">
-                              예약 {slot.bookings.length}명
+                              {slot.bookings.length}/{slot.max_capacity}명
                             </span>
+                            {slot.bookings.length > 0 && (
+                              <span className="text-xs text-slate/70 truncate">
+                                {slot.bookings
+                                  .map((b) => b.profiles?.name ?? '이름없음')
+                                  .join(', ')}
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => handleSaveEdit(slot)}
-                              disabled={savingEdit}
-                              className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50"
-                            >
-                              저장
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="text-xs text-slate hover:text-ink transition-colors"
-                            >
-                              취소
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="font-display font-semibold text-ink text-lg w-14 flex-shrink-0">
-                              {formatTime(slot.slot_time)}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs text-slate">
-                                  {slot.bookings.length}/{slot.max_capacity}명
-                                </span>
-                                {slot.bookings.length > 0 && (
-                                  <span className="text-xs text-slate/70 truncate">
-                                    {slot.bookings
-                                      .map((b) => b.profiles?.name ?? '이름없음')
-                                      .join(', ')}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => startEdit(slot)}
-                              className="text-xs text-slate hover:text-ink transition-colors px-2 py-1 rounded-md hover:bg-sand"
-                            >
-                              수정
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSlot(slot.id)}
-                              className="text-slate hover:text-red-500 transition-colors text-lg"
-                              title="삭제"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </>
-                      )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteSlot(slot.id)}
+                        className="text-slate hover:text-red-500 transition-colors text-lg"
+                        title="삭제"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>

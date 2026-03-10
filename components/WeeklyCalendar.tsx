@@ -20,6 +20,7 @@ export default function WeeklyCalendar() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart())
   const [slots, setSlots] = useState<SlotWithMeta[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [remainingSessions, setRemainingSessions] = useState<number | null>(null)
@@ -41,9 +42,13 @@ export default function WeeklyCalendar() {
     setRemainingSessions(data?.remaining_sessions ?? 0)
   }, [userId, supabase])
 
-  const fetchSlots = useCallback(async () => {
+  const fetchSlots = useCallback(async (opts?: { keepLoading?: boolean }) => {
     if (!userId) return
-    setLoading(true)
+    if (opts?.keepLoading) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
 
     const weekEnd = toISODateString(nextWeek(weekStart))
     const weekStartStr = toISODateString(weekStart)
@@ -103,6 +108,7 @@ export default function WeeklyCalendar() {
 
     setSlots(enriched)
     setLoading(false)
+    setRefreshing(false)
     await fetchProfile()
   }, [weekStart, userId, fetchProfile, supabase])
 
@@ -123,7 +129,7 @@ export default function WeeklyCalendar() {
     if (error) {
       alert(error.message)
     } else {
-      await fetchSlots()
+      await fetchSlots({ keepLoading: true })
     }
     setActionLoading(null)
   }
@@ -136,7 +142,7 @@ export default function WeeklyCalendar() {
     if (error) {
       alert(error.message)
     } else {
-      await fetchSlots()
+      await fetchSlots({ keepLoading: true })
     }
     setActionLoading(null)
   }
@@ -204,6 +210,11 @@ export default function WeeklyCalendar() {
         </div>
       ) : (
         <div className="space-y-3">
+          {refreshing && (
+            <div className="text-xs text-slate">
+              업데이트 중...
+            </div>
+          )}
           {slotsByDay.map(({ day, slots: daySlots }) => (
             <div key={day.toISOString()} className="card overflow-hidden">
               {/* 날짜 헤더 */}

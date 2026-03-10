@@ -43,17 +43,13 @@ export default function SlotManager() {
     []
   )
 
-  const [weekAddOpen, setWeekAddOpen] = useState(true)
+  const [weekEditorOpen, setWeekEditorOpen] = useState(true)
   const [weeklyTimes, setWeeklyTimes] = useState<Record<number, string[]>>(
     () => emptyWeekTimes()
   )
   const [capacity, setCapacity] = useState(1)
   const [addingWeek, setAddingWeek] = useState(false)
   const [copyingTarget, setCopyingTarget] = useState<'prev' | 'next' | null>(null)
-  const [editMode, setEditMode] = useState(false)
-  const [editingWeekStart, setEditingWeekStart] = useState(() =>
-    toISODateString(getWeekStart())
-  )
 
   const supabase = createClient()
   const weekDays = getWeekDays(weekStart)
@@ -107,9 +103,12 @@ export default function SlotManager() {
   )
 
   useEffect(() => {
-    if (editMode) return
-    setWeeklyTimes(emptyWeekTimes())
-  }, [weekStart, emptyWeekTimes, editMode])
+    if (!weekEditorOpen) {
+      setWeeklyTimes(emptyWeekTimes())
+      return
+    }
+    setWeeklyTimes(computeWeeklyTimesFromSlots(weekStart, slots))
+  }, [weekStart, slots, weekEditorOpen, emptyWeekTimes, computeWeeklyTimesFromSlots])
 
   const selectedWeekSlots = useMemo(() => {
     return weekDays.flatMap((day, dayIndex) =>
@@ -121,16 +120,6 @@ export default function SlotManager() {
       })
     )
   }, [weekDays, weeklyTimes])
-
-  const existingSlotTimes = useMemo(
-    () => new Set(slots.map((s) => s.slot_time)),
-    [slots]
-  )
-
-  const duplicateCount = useMemo(
-    () => selectedWeekSlots.filter((t) => existingSlotTimes.has(t.toISOString())).length,
-    [selectedWeekSlots, existingSlotTimes]
-  )
 
   const toggleWeeklyTime = (dayIndex: number, time: string) => {
     setWeeklyTimes((prev) => {
@@ -146,47 +135,16 @@ export default function SlotManager() {
     })
   }
 
-  const handleAddWeekSlots = async () => {
+  const handleSaveWeekSlots = async () => {
     if (selectedWeekSlots.length === 0) {
-      alert('추가할 슬롯이 없습니다.')
+      alert('저장할 슬롯이 없습니다.')
       return
     }
     setAddingWeek(true)
 
-    const newSlots = selectedWeekSlots.map((slotTime) => ({
-      slot_time: slotTime.toISOString(),
-      max_capacity: capacity,
-      week_start: toISODateString(weekStart),
-    }))
-
-    const duplicates = newSlots.filter((s) => existingSlotTimes.has(s.slot_time))
-    const insertSlots = newSlots.filter((s) => !existingSlotTimes.has(s.slot_time))
-
-    if (duplicates.length > 0) {
-      alert(`이미 존재하는 슬롯 ${duplicates.length}개는 제외하고 추가합니다.`)
-    }
-
-    if (insertSlots.length === 0) {
-      alert('추가할 슬롯이 없습니다.')
-      setAddingWeek(false)
-      return
-    }
-
-    await supabase.from('time_slots').insert(insertSlots)
-    setAddingWeek(false)
-    setWeeklyTimes(emptyWeekTimes())
-    await fetchSlots()
-  }
-
-  const handleUpdateWeekSlots = async () => {
-    const baseWeekStart = parseISO(editingWeekStart)
+    const baseWeekStart = weekStart
     const baseWeekStartStr = toISODateString(baseWeekStart)
     const targetSlots = slots.filter((s) => s.week_start === baseWeekStartStr)
-
-    if (targetSlots.length === 0) {
-      alert('수정할 주간 슬롯이 없습니다.')
-      return
-    }
 
     const targetBookedSlots = targetSlots.filter((s) => s.bookings.length > 0)
 
@@ -218,8 +176,14 @@ export default function SlotManager() {
         !bookedTimeSet.has(t)
     )
 
-    if (deletableSlotIds.length === 0 && missingTimes.length === 0) {
+    if (targetSlots.length === 0 && missingTimes.length === 0) {
+      alert('추가할 슬롯이 없습니다.')
+      setAddingWeek(false)
+      return
+    }
+    if (targetSlots.length > 0 && deletableSlotIds.length === 0 && missingTimes.length === 0) {
       alert('변경할 내용이 없습니다.')
+      setAddingWeek(false)
       return
     }
 
@@ -237,15 +201,12 @@ export default function SlotManager() {
       )
     }
 
-    if (targetSlots.length > 0) {
-      await supabase
-        .from('time_slots')
-        .update({ max_capacity: capacity })
-        .eq('week_start', baseWeekStartStr)
-    }
+    await supabase
+      .from('time_slots')
+      .update({ max_capacity: capacity })
+      .eq('week_start', baseWeekStartStr)
 
-    setEditMode(false)
-    setEditingWeekStart(toISODateString(weekStart))
+    setAddingWeek(false)
     setWeeklyTimes(emptyWeekTimes())
     await fetchSlots()
   }
@@ -349,36 +310,23 @@ export default function SlotManager() {
           </button>
           <button
             onClick={() => {
-              if (editMode) {
-                setEditMode(false)
-                setEditingWeekStart(toISODateString(weekStart))
-                setWeeklyTimes(emptyWeekTimes())
-                return
+              setWeekEditorOpen(!weekEditorOpen)
+              if (!weekEditorOpen) {
+                setWeeklyTimes(computeWeeklyTimesFromSlots(weekStart, slots))
               }
-              setEditMode(true)
-              setEditingWeekStart(toISODateString(weekStart))
-              setWeeklyTimes(computeWeeklyTimesFromSlots(weekStart, slots))
             }}
-            className={cn('btn-secondary text-xs px-4 py-2', editMode && 'bg-brand text-white border-brand')}
+            className={cn('btn-primary text-xs px-4 py-2', weekEditorOpen && 'bg-slate text-white hover:bg-slate/90')}
           >
-            {editMode ? '주간 수정 취소' : '주간 수정'}
-          </button>
-          <button
-            onClick={() => {
-              setWeekAddOpen(!weekAddOpen)
-            }}
-            className={cn('btn-primary text-xs px-4 py-2', weekAddOpen && 'bg-slate text-white hover:bg-slate/90')}
-          >
-            {weekAddOpen ? '주간 추가 닫기' : '주간 추가'}
+            {weekEditorOpen ? '주간 편집 닫기' : '주간 편집'}
           </button>
         </div>
       </div>
 
       {/* 주간 추가 패널 */}
-      {(weekAddOpen || editMode) && (
+      {weekEditorOpen && (
         <div className="card-elevated p-5 space-y-5">
           <h3 className="font-medium text-ink text-sm">
-            {editMode ? '주간 시간 수정' : '주간 시간 등록'}
+            주간 시간 편집
           </h3>
 
           <div className="space-y-3">
@@ -433,28 +381,18 @@ export default function SlotManager() {
               />
             </div>
             <div className="text-xs text-slate pb-3">
-              {editMode
-                ? `선택된 슬롯 ${selectedWeekSlots.length}개로 업데이트 예정`
-                : `총 ${selectedWeekSlots.length}개 슬롯 추가 예정`}
+              선택된 슬롯 ${selectedWeekSlots.length}개로 업데이트 예정
             </div>
           </div>
 
-          {!editMode && duplicateCount > 0 && (
-            <p className="text-xs text-slate">
-              이미 존재하는 슬롯 {duplicateCount}개는 추가에서 제외됩니다.
-            </p>
-          )}
-
           <button
-            onClick={editMode ? handleUpdateWeekSlots : handleAddWeekSlots}
+            onClick={handleSaveWeekSlots}
             disabled={addingWeek || selectedWeekSlots.length === 0}
             className="btn-primary text-sm disabled:opacity-50"
           >
             {addingWeek
               ? '처리 중...'
-              : editMode
-                ? `${selectedWeekSlots.length}개 슬롯 수정`
-                : `${selectedWeekSlots.length}개 슬롯 추가`}
+              : `${selectedWeekSlots.length}개 슬롯 저장`}
           </button>
         </div>
       )}

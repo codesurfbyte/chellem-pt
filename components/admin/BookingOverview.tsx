@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, isToday } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 
 type BookingRow = {
   id: string
@@ -29,6 +30,7 @@ type GroupedSlot = {
 }
 
 export default function BookingOverview() {
+  const router = useRouter()
   const [view, setView] = useState<'today' | 'week'>('today')
   const [slots, setSlots] = useState<GroupedSlot[]>([])
   const [loading, setLoading] = useState(true)
@@ -100,6 +102,7 @@ export default function BookingOverview() {
     }
     setCancellingId(null)
     await fetchBookings()
+    router.refresh()
   }
 
   const totalBookings = slots.reduce((acc, s) => acc + s.bookings.length, 0)

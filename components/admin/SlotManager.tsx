@@ -53,7 +53,7 @@ export default function SlotManager() {
   const [copyingTarget, setCopyingTarget] = useState<'prev' | 'next' | null>(null)
 
   const supabase = createClient()
-  const weekDays = getWeekDays(weekStart)
+  const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart])
 
   const fetchSlots = useCallback(async () => {
     setLoading(true)

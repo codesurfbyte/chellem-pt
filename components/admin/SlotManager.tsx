@@ -165,6 +165,19 @@ export default function SlotManager() {
           '해당 슬롯을 삭제하고 예약을 취소하시겠습니까?'
       )
       if (!confirmRemove) {
+        setWeeklyTimes((prev) => {
+          const next = { ...prev }
+          bookedToRemove.forEach((slot) => {
+            const slotDate = parseISO(slot.slot_time)
+            const dayIndex = weekDays.findIndex((d) => isSameDay(d, slotDate))
+            if (dayIndex === -1) return
+            const time = slotDate.toTimeString().slice(0, 5)
+            const list = new Set(next[dayIndex] ?? [])
+            list.add(time)
+            next[dayIndex] = Array.from(list).sort()
+          })
+          return next
+        })
         setAddingWeek(false)
         return
       }

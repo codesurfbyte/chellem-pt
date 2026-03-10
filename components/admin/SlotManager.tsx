@@ -144,6 +144,7 @@ export default function SlotManager() {
     const targetSlots = slots.filter((s) => s.week_start === baseWeekStartStr)
 
     const selectedTimes = selectedWeekSlots.map((t) => t.toISOString())
+    const selectedTimeSet = new Set(selectedTimes)
 
     const { deletableSlotIds, insertTimes, bookedTimeSet } = computeWeekChanges({
       selectedTimes,
@@ -156,7 +157,7 @@ export default function SlotManager() {
 
     const bookedToRemove = targetSlots
       .filter((s) => s.bookings.length > 0)
-      .filter((s) => !selectedTimes.includes(s.slot_time))
+      .filter((s) => !selectedTimeSet.has(new Date(s.slot_time).toISOString()))
 
     let deletableIds = [...deletableSlotIds]
     if (bookedToRemove.length > 0) {
@@ -234,15 +235,6 @@ export default function SlotManager() {
         alert(`정원 업데이트 실패: ${error.message}`)
         setAddingWeek(false)
         return
-      }
-    }
-
-    if (bookedTimeSet.size > 0) {
-      const removedBooked = Array.from(bookedTimeSet).filter(
-        (t) => !selectedTimes.includes(t)
-      )
-      if (removedBooked.length > 0) {
-        alert('예약이 있는 슬롯은 유지됩니다.')
       }
     }
 

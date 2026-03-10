@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { format, parseISO, isPast } from 'date-fns'
+import { parseISO, isPast } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale'
 import CancelBookingButton from '@/components/CancelBookingButton'
+
+const TIME_ZONE = 'Asia/Seoul'
+
+function formatKST(dateStr: string, pattern: string) {
+  return formatInTimeZone(parseISO(dateStr), TIME_ZONE, pattern, { locale: ko })
+}
 
 export default async function MyPage() {
   const supabase = await createClient()
@@ -86,20 +93,17 @@ export default async function MyPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-lg bg-brand/10 flex flex-col items-center justify-center flex-shrink-0">
                     <span className="text-brand font-display font-bold text-lg leading-none">
-                      {format(parseISO(booking.time_slots!.slot_time), 'd')}
+                      {formatKST(booking.time_slots!.slot_time, 'd')}
                     </span>
                     <span className="text-brand/70 text-[10px]">
-                      {format(parseISO(booking.time_slots!.slot_time), 'EEE', {
-                        locale: ko,
-                      })}
+                      {formatKST(booking.time_slots!.slot_time, 'EEE')}
                     </span>
                   </div>
                   <div>
                     <p className="text-ink font-medium">
-                      {format(
-                        parseISO(booking.time_slots!.slot_time),
-                        'yyyy년 M월 d일 HH:mm',
-                        { locale: ko }
+                      {formatKST(
+                        booking.time_slots!.slot_time,
+                        'yyyy년 M월 d일 HH:mm'
                       )}
                     </p>
                     <p className="text-slate text-xs mt-0.5">
@@ -128,19 +132,16 @@ export default async function MyPage() {
               >
                 <div className="w-12 h-12 rounded-lg bg-sand flex flex-col items-center justify-center flex-shrink-0">
                   <span className="text-slate font-display font-bold text-lg leading-none">
-                    {format(parseISO(booking.time_slots!.slot_time), 'd')}
+                    {formatKST(booking.time_slots!.slot_time, 'd')}
                   </span>
                   <span className="text-slate/70 text-[10px]">
-                    {format(parseISO(booking.time_slots!.slot_time), 'EEE', {
-                      locale: ko,
-                    })}
+                    {formatKST(booking.time_slots!.slot_time, 'EEE')}
                   </span>
                 </div>
                 <p className="text-slate text-sm">
-                  {format(
-                    parseISO(booking.time_slots!.slot_time),
-                    'yyyy년 M월 d일 HH:mm',
-                    { locale: ko }
+                  {formatKST(
+                    booking.time_slots!.slot_time,
+                    'yyyy년 M월 d일 HH:mm'
                   )}
                 </p>
               </div>

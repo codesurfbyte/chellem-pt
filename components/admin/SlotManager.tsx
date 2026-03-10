@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils'
 import type { TimeSlot, Booking } from '@/lib/types'
 import { parseISO, isSameDay, addDays } from 'date-fns'
+import { computeWeekChanges } from '@/lib/slotPlanner'
 
 const TIME_OPTIONS = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
@@ -136,75 +137,82 @@ export default function SlotManager() {
   }
 
   const handleSaveWeekSlots = async () => {
-    if (selectedWeekSlots.length === 0) {
-      alert('저장할 슬롯이 없습니다.')
-      return
-    }
     setAddingWeek(true)
 
     const baseWeekStart = weekStart
     const baseWeekStartStr = toISODateString(baseWeekStart)
     const targetSlots = slots.filter((s) => s.week_start === baseWeekStartStr)
 
-    const targetBookedSlots = targetSlots.filter((s) => s.bookings.length > 0)
+    const selectedTimes = selectedWeekSlots.map((t) => t.toISOString())
 
-    const bookedTimeSet = new Set(
-      targetBookedSlots.map((s) => s.slot_time)
-    )
-
-    const baseWeekDays = getWeekDays(baseWeekStart)
-    const newSelectedTimes = baseWeekDays.flatMap((day, dayIndex) => {
-      const times = weeklyTimes[dayIndex] ?? []
-      return times.map((time) => {
-        const [h, m] = time.split(':').map(Number)
-        const slotTime = new Date(day)
-        slotTime.setHours(h, m, 0, 0)
-        return slotTime.toISOString()
-      })
+    const { deletableSlotIds, insertTimes, bookedTimeSet } = computeWeekChanges({
+      selectedTimes,
+      existingSlots: targetSlots.map((s) => ({
+        id: s.id,
+        slot_time: s.slot_time,
+        bookingsCount: s.bookings.length,
+      })),
     })
 
-    const newSelectedSet = new Set(newSelectedTimes)
-
-    const deletableSlotIds = targetSlots
-      .filter((s) => !bookedTimeSet.has(s.slot_time))
-      .filter((s) => !newSelectedSet.has(s.slot_time))
-      .map((s) => s.id)
-
-    const missingTimes = newSelectedTimes.filter(
-      (t) =>
-        !targetSlots.some((s) => s.slot_time === t) &&
-        !bookedTimeSet.has(t)
-    )
-
-    if (targetSlots.length === 0 && missingTimes.length === 0) {
+    if (targetSlots.length === 0 && insertTimes.length === 0) {
       alert('추가할 슬롯이 없습니다.')
       setAddingWeek(false)
       return
     }
-    if (targetSlots.length > 0 && deletableSlotIds.length === 0 && missingTimes.length === 0) {
+
+    if (targetSlots.length > 0 && deletableSlotIds.length === 0 && insertTimes.length === 0) {
       alert('변경할 내용이 없습니다.')
       setAddingWeek(false)
       return
     }
 
     if (deletableSlotIds.length > 0) {
-      await supabase.from('time_slots').delete().in('id', deletableSlotIds)
+      const { error } = await supabase
+        .from('time_slots')
+        .delete()
+        .in('id', deletableSlotIds)
+      if (error) {
+        alert(`슬롯 삭제 실패: ${error.message}`)
+        setAddingWeek(false)
+        return
+      }
     }
 
-    if (missingTimes.length > 0) {
-      await supabase.from('time_slots').insert(
-        missingTimes.map((t) => ({
+    if (insertTimes.length > 0) {
+      const { error } = await supabase.from('time_slots').insert(
+        insertTimes.map((t) => ({
           slot_time: t,
           max_capacity: capacity,
           week_start: baseWeekStartStr,
         }))
       )
+      if (error) {
+        alert(`슬롯 추가 실패: ${error.message}`)
+        setAddingWeek(false)
+        return
+      }
     }
 
-    await supabase
-      .from('time_slots')
-      .update({ max_capacity: capacity })
-      .eq('week_start', baseWeekStartStr)
+    if (selectedTimes.length > 0) {
+      const { error } = await supabase
+        .from('time_slots')
+        .update({ max_capacity: capacity })
+        .eq('week_start', baseWeekStartStr)
+      if (error) {
+        alert(`정원 업데이트 실패: ${error.message}`)
+        setAddingWeek(false)
+        return
+      }
+    }
+
+    if (bookedTimeSet.size > 0) {
+      const removedBooked = Array.from(bookedTimeSet).filter(
+        (t) => !selectedTimes.includes(t)
+      )
+      if (removedBooked.length > 0) {
+        alert('예약이 있는 슬롯은 유지됩니다.')
+      }
+    }
 
     setAddingWeek(false)
     setWeeklyTimes(emptyWeekTimes())
@@ -387,7 +395,7 @@ export default function SlotManager() {
 
           <button
             onClick={handleSaveWeekSlots}
-            disabled={addingWeek || selectedWeekSlots.length === 0}
+            disabled={addingWeek}
             className="btn-primary text-sm disabled:opacity-50"
           >
             {addingWeek

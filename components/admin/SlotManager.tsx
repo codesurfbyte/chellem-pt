@@ -168,9 +168,9 @@ export default function SlotManager() {
         setAddingWeek(false)
         return
       }
-      deletableIds = [
-        ...new Set([...deletableIds, ...bookedToRemove.map((s) => s.id)]),
-      ]
+      deletableIds = Array.from(
+        new Set([...deletableIds, ...bookedToRemove.map((s) => s.id)])
+      )
     }
 
     if (targetSlots.length === 0 && insertTimes.length === 0) {

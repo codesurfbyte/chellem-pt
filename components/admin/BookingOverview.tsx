@@ -92,10 +92,12 @@ export default function BookingOverview() {
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm('이 예약을 취소하시겠습니까?')) return
     setCancellingId(bookingId)
-    await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', bookingId)
+    const { error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId })
+    if (error) {
+      alert(error.message)
+      setCancellingId(null)
+      return
+    }
     setCancellingId(null)
     await fetchBookings()
   }

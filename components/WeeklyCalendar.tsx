@@ -22,6 +22,7 @@ export default function WeeklyCalendar() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [remainingSessions, setRemainingSessions] = useState<number | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -29,6 +30,16 @@ export default function WeeklyCalendar() {
       setUserId(user?.id ?? null)
     })
   }, [])
+
+  const fetchProfile = useCallback(async () => {
+    if (!userId) return
+    const { data } = await supabase
+      .from('profiles')
+      .select('remaining_sessions')
+      .eq('id', userId)
+      .single()
+    setRemainingSessions(data?.remaining_sessions ?? 0)
+  }, [userId, supabase])
 
   const fetchSlots = useCallback(async () => {
     if (!userId) return
@@ -92,7 +103,8 @@ export default function WeeklyCalendar() {
 
     setSlots(enriched)
     setLoading(false)
-  }, [weekStart, userId])
+    await fetchProfile()
+  }, [weekStart, userId, fetchProfile, supabase])
 
   useEffect(() => {
     fetchSlots()
@@ -100,27 +112,32 @@ export default function WeeklyCalendar() {
 
   const handleBook = async (slotId: string) => {
     if (!userId) return
+    if (remainingSessions !== null && remainingSessions <= 0) {
+      alert('잔여 횟수가 없습니다. 관리자에게 문의해주세요.')
+      return
+    }
     setActionLoading(slotId)
 
-    const { error } = await supabase.from('bookings').insert({
-      member_id: userId,
-      slot_id: slotId,
-      status: 'confirmed',
-    })
+    const { error } = await supabase.rpc('book_slot', { p_slot_id: slotId })
 
-    if (!error) await fetchSlots()
+    if (error) {
+      alert(error.message)
+    } else {
+      await fetchSlots()
+    }
     setActionLoading(null)
   }
 
   const handleCancel = async (bookingId: string, slotId: string) => {
     setActionLoading(slotId)
 
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', bookingId)
+    const { error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId })
 
-    if (!error) await fetchSlots()
+    if (error) {
+      alert(error.message)
+    } else {
+      await fetchSlots()
+    }
     setActionLoading(null)
   }
 
@@ -272,13 +289,17 @@ export default function WeeklyCalendar() {
                             ) : !isFull ? (
                               <button
                                 onClick={() => handleBook(slot.id)}
-                                disabled={isActioning}
+                                disabled={isActioning || remainingSessions === 0}
                                 className="w-full text-xs py-1.5 rounded-full 
                                            bg-brand/10 text-brand 
                                            border border-brand/20 hover:bg-brand/20
                                            transition-all disabled:opacity-50"
                               >
-                                {isActioning ? '처리 중...' : '예약하기'}
+                                {isActioning
+                                  ? '처리 중...'
+                                  : remainingSessions === 0
+                                    ? '횟수 없음'
+                                    : '예약하기'}
                               </button>
                             ) : null
                           )}

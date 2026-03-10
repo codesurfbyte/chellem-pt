@@ -162,6 +162,97 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+-- =========================================
+-- 예약/횟수 처리 함수
+-- =========================================
+
+create or replace function public.book_slot(p_slot_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid;
+  v_remaining int;
+begin
+  v_user := auth.uid();
+  if v_user is null then
+    raise exception 'not authenticated';
+  end if;
+
+  select remaining_sessions into v_remaining
+  from public.profiles
+  where id = v_user;
+
+  if v_remaining is null then
+    raise exception 'profile not found';
+  end if;
+
+  if v_remaining <= 0 then
+    raise exception 'not enough sessions';
+  end if;
+
+  insert into public.bookings (member_id, slot_id, status)
+  values (v_user, p_slot_id, 'confirmed');
+
+  update public.profiles
+  set remaining_sessions = remaining_sessions - 1
+  where id = v_user;
+end;
+$$;
+
+create or replace function public.cancel_booking(p_booking_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid;
+  v_is_admin boolean;
+  v_member uuid;
+  v_status text;
+begin
+  v_user := auth.uid();
+  if v_user is null then
+    raise exception 'not authenticated';
+  end if;
+
+  select is_admin into v_is_admin
+  from public.profiles
+  where id = v_user;
+
+  select member_id, status into v_member, v_status
+  from public.bookings
+  where id = p_booking_id
+  for update;
+
+  if v_member is null then
+    raise exception 'booking not found';
+  end if;
+
+  if v_user <> v_member and coalesce(v_is_admin, false) = false then
+    raise exception 'not allowed';
+  end if;
+
+  if v_status <> 'confirmed' then
+    return;
+  end if;
+
+  update public.bookings
+  set status = 'cancelled'
+  where id = p_booking_id;
+
+  update public.profiles
+  set remaining_sessions = remaining_sessions + 1
+  where id = v_member;
+end;
+$$;
+
+grant execute on function public.book_slot(uuid) to authenticated;
+grant execute on function public.cancel_booking(uuid) to authenticated;
+
 -- ==================
 -- 관리자 계정 설정
 -- ※ 트레이너 이메일로 첫 로그인 후 아래 쿼리 실행

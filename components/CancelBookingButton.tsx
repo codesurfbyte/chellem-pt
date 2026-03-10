@@ -13,10 +13,10 @@ export default function CancelBookingButton({ bookingId }: { bookingId: string }
     if (!confirm('예약을 취소하시겠습니까?')) return
     setLoading(true)
 
-    await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', bookingId)
+    const { error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId })
+    if (error) {
+      alert(error.message)
+    }
 
     setLoading(false)
     router.refresh()

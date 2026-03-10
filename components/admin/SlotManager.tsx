@@ -38,7 +38,7 @@ export default function SlotManager() {
   const [selectedTimes, setSelectedTimes] = useState<string[]>([])
   const [capacity, setCapacity] = useState(1)
   const [processing, setProcessing] = useState(false)
-  const [copying, setCopying] = useState(false)
+  const [copyingTarget, setCopyingTarget] = useState<'prev' | 'next' | null>(null)
 
   const supabase = createClient()
   const weekDays = getWeekDays(weekStart)
@@ -159,16 +159,21 @@ export default function SlotManager() {
     await fetchSlots()
   }
 
-  const handleCopyToNextWeek = async () => {
+  const handleCopyToWeek = async (direction: 'prev' | 'next') => {
     if (slots.length === 0) {
       alert('복사할 슬롯이 없습니다.')
       return
     }
-    if (!confirm('이번 주 슬롯을 다음 주로 복사하시겠습니까?')) return
+    const confirmMessage =
+      direction === 'next'
+        ? '이번 주 슬롯을 다음 주로 복사하시겠습니까?'
+        : '이번 주 슬롯을 이전 주로 복사하시겠습니까?'
+    if (!confirm(confirmMessage)) return
 
-    setCopying(true)
+    setCopyingTarget(direction)
 
-    const targetWeekStart = nextWeek(weekStart)
+    const targetWeekStart =
+      direction === 'next' ? nextWeek(weekStart) : prevWeek(weekStart)
     const targetWeekStartStr = toISODateString(targetWeekStart)
 
     const { data: targetSlots } = await supabase
@@ -178,8 +183,9 @@ export default function SlotManager() {
 
     const targetSlotTimes = new Set((targetSlots ?? []).map((s) => s.slot_time))
 
+    const shiftDays = direction === 'next' ? 7 : -7
     const newSlots = slots.map((slot) => ({
-      slot_time: addDays(parseISO(slot.slot_time), 7).toISOString(),
+      slot_time: addDays(parseISO(slot.slot_time), shiftDays).toISOString(),
       max_capacity: slot.max_capacity,
       week_start: targetWeekStartStr,
     }))
@@ -188,17 +194,18 @@ export default function SlotManager() {
     const insertSlots = newSlots.filter((s) => !targetSlotTimes.has(s.slot_time))
 
     if (duplicates.length > 0) {
-      alert(`다음 주에 이미 존재하는 슬롯 ${duplicates.length}개는 제외합니다.`)
+      const targetLabel = direction === 'next' ? '다음 주' : '이전 주'
+      alert(`${targetLabel}에 이미 존재하는 슬롯 ${duplicates.length}개는 제외합니다.`)
     }
 
     if (insertSlots.length === 0) {
       alert('복사할 새 슬롯이 없습니다.')
-      setCopying(false)
+      setCopyingTarget(null)
       return
     }
 
     await supabase.from('time_slots').insert(insertSlots)
-    setCopying(false)
+    setCopyingTarget(null)
     await fetchSlots()
   }
 
@@ -246,11 +253,18 @@ export default function SlotManager() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={handleCopyToNextWeek}
-            disabled={copying}
+            onClick={() => handleCopyToWeek('prev')}
+            disabled={copyingTarget !== null}
             className="btn-secondary text-xs px-4 py-2 disabled:opacity-50"
           >
-            {copying ? '복사 중...' : '다음 주 복사'}
+            {copyingTarget === 'prev' ? '복사 중...' : '이전 주 복사'}
+          </button>
+          <button
+            onClick={() => handleCopyToWeek('next')}
+            disabled={copyingTarget !== null}
+            className="btn-secondary text-xs px-4 py-2 disabled:opacity-50"
+          >
+            {copyingTarget === 'next' ? '복사 중...' : '다음 주 복사'}
           </button>
           <button
             onClick={() => {

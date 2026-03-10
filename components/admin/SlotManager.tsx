@@ -152,7 +152,7 @@ export default function SlotManager() {
         slot_time: s.slot_time,
         bookingsCount: s.bookings.length,
       })),
-    })
+    }) as { deletableSlotIds: string[]; insertTimes: string[]; bookedTimeSet: Set<string> }
 
     if (targetSlots.length === 0 && insertTimes.length === 0) {
       alert('추가할 슬롯이 없습니다.')
@@ -180,7 +180,7 @@ export default function SlotManager() {
 
     if (insertTimes.length > 0) {
       const { error } = await supabase.from('time_slots').insert(
-        insertTimes.map((t) => ({
+        insertTimes.map((t: string) => ({
           slot_time: t,
           max_capacity: capacity,
           week_start: baseWeekStartStr,

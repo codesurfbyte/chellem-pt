@@ -154,23 +154,42 @@ export default function SlotManager() {
       })),
     }) as { deletableSlotIds: string[]; insertTimes: string[]; bookedTimeSet: Set<string> }
 
+    const bookedToRemove = targetSlots
+      .filter((s) => s.bookings.length > 0)
+      .filter((s) => !selectedTimes.includes(s.slot_time))
+
+    let deletableIds = [...deletableSlotIds]
+    if (bookedToRemove.length > 0) {
+      const confirmRemove = confirm(
+        `예약된 슬롯 ${bookedToRemove.length}개가 포함되어 있습니다. ` +
+          '해당 슬롯을 삭제하고 예약을 취소하시겠습니까?'
+      )
+      if (!confirmRemove) {
+        setAddingWeek(false)
+        return
+      }
+      deletableIds = [
+        ...new Set([...deletableIds, ...bookedToRemove.map((s) => s.id)]),
+      ]
+    }
+
     if (targetSlots.length === 0 && insertTimes.length === 0) {
       alert('추가할 슬롯이 없습니다.')
       setAddingWeek(false)
       return
     }
 
-    if (targetSlots.length > 0 && deletableSlotIds.length === 0 && insertTimes.length === 0) {
+    if (targetSlots.length > 0 && deletableIds.length === 0 && insertTimes.length === 0) {
       alert('변경할 내용이 없습니다.')
       setAddingWeek(false)
       return
     }
 
-    if (deletableSlotIds.length > 0) {
+    if (deletableIds.length > 0) {
       const { error } = await supabase
         .from('time_slots')
         .delete()
-        .in('id', deletableSlotIds)
+        .in('id', deletableIds)
       if (error) {
         alert(`슬롯 삭제 실패: ${error.message}`)
         setAddingWeek(false)

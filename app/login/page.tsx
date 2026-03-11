@@ -16,14 +16,15 @@ function LoginForm() {
   const supabase = createClient()
 
   const redirectUrl = searchParams.get('redirect') ?? '/book'
+  const safeRedirectUrl = redirectUrl.startsWith('/') ? redirectUrl : '/book'
   const authError = searchParams.get('error')
 
   useEffect(() => {
     // 이미 로그인된 경우 리다이렉트
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace(redirectUrl)
+      if (user) router.replace(safeRedirectUrl)
     })
-  }, [redirectUrl, router, supabase])
+  }, [safeRedirectUrl, router, supabase])
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +46,7 @@ function LoginForm() {
       authError = signUpError
       if (!signUpError) {
         alert('회원가입 성공! 바로 로그인됩니다.')
-        router.push(redirectUrl)
+        window.location.href = safeRedirectUrl
       }
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -54,7 +55,8 @@ function LoginForm() {
       })
       authError = signInError
       if (!signInError) {
-        router.push(redirectUrl)
+        await supabase.auth.getSession()
+        window.location.href = safeRedirectUrl
       }
     }
 

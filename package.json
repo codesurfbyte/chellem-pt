@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run test && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:backend": "node scripts/slotPlanner.test.js",
+    "test:frontend": "node scripts/frontend.test.js",
+    "test": "npm run test:backend && npm run test:frontend"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",

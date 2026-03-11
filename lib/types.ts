@@ -6,6 +6,7 @@ export type Profile = {
   is_admin: boolean
   created_at: string
   last_active_at?: string | null
+  admin_note?: string | null
 }
 
 export type TimeSlot = {

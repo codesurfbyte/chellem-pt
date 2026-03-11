@@ -18,6 +18,7 @@ create table if not exists public.profiles (
   remaining_sessions int not null default 0,
   is_admin    boolean not null default false,
   last_active_at timestamptz,
+  admin_note   text,
   created_at  timestamptz not null default now()
 );
 

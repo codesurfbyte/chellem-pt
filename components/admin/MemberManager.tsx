@@ -13,6 +13,7 @@ export default function MemberManager() {
   const [editSessions, setEditSessions] = useState(0)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editNote, setEditNote] = useState('')
   const supabase = createClient()
 
   const formatLastActive = (value: string | null | undefined) => {
@@ -21,7 +22,7 @@ export default function MemberManager() {
     const now = new Date()
     const hours = differenceInHours(now, last)
     if (hours < 24) {
-      return format(last, 'yyyy.MM.dd HH.mm.ss', { locale: ko })
+      return format(last, 'yyyy.MM.dd HH:mm:ss', { locale: ko })
     }
     const days = Math.max(1, differenceInDays(now, last))
     return `${days}일 전`
@@ -45,13 +46,18 @@ export default function MemberManager() {
     setEditId(member.id)
     setEditSessions(member.remaining_sessions)
     setEditName(member.name ?? '')
+    setEditNote(member.admin_note ?? '')
   }
 
   async function saveEdit(id: string) {
     setSaving(true)
     await supabase
       .from('profiles')
-      .update({ remaining_sessions: editSessions, name: editName || null })
+      .update({
+        remaining_sessions: editSessions,
+        name: editName || null,
+        admin_note: editNote || null,
+      })
       .eq('id', id)
     setSaving(false)
     setEditId(null)
@@ -108,6 +114,16 @@ export default function MemberManager() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="label">관리자 메모</label>
+                    <textarea
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      className="input resize-none"
+                      rows={3}
+                      placeholder="회원 특이사항, 선호 시간대 등"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveEdit(member.id)}
@@ -140,6 +156,11 @@ export default function MemberManager() {
                       <span className="text-xs text-slate">
                         마지막 방문: {formatLastActive(member.last_active_at)}
                       </span>
+                      {member.admin_note && (
+                        <p className="text-xs text-slate mt-1 line-clamp-2 whitespace-pre-wrap">
+                          {member.admin_note}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 flex-shrink-0">

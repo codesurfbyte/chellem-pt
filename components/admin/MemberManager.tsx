@@ -166,23 +166,42 @@ export default function MemberManager() {
                         {(member.name ?? '?')[0].toUpperCase()}
                       </span>
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 space-y-2">
                       <p className="text-ink text-sm font-medium truncate">
                         {member.name ?? '이름 없음'}
                       </p>
-                      <span className="text-xs text-slate">
-                        연락처: {member.phone ?? '-'}
-                      </span>
-                      <span className="text-xs text-slate">
-                        등록일: {formatCreatedAt(member.created_at)}
-                      </span>
-                      <span className="text-xs text-slate">
-                        마지막 방문: {formatLastActive(member.last_active_at)}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] uppercase tracking-wide text-slate/70">
+                            연락처
+                          </span>
+                          <span className="font-medium text-ink/80">
+                            {member.phone ?? '-'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] uppercase tracking-wide text-slate/70">
+                            등록일
+                          </span>
+                          <span className="font-medium text-ink/80">
+                            {formatCreatedAt(member.created_at)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] uppercase tracking-wide text-slate/70">
+                            마지막 방문
+                          </span>
+                          <span className="font-medium text-ink/80">
+                            {formatLastActive(member.last_active_at)}
+                          </span>
+                        </div>
+                      </div>
                       {member.admin_note && (
-                        <p className="text-xs text-slate mt-1 line-clamp-2 whitespace-pre-wrap">
-                          {member.admin_note}
-                        </p>
+                        <div className="rounded-md bg-sand/60 border border-mist px-3 py-2">
+                          <p className="text-xs text-slate line-clamp-2 whitespace-pre-wrap">
+                            {member.admin_note}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

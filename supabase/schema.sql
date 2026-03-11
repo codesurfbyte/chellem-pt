@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   phone       text,
   remaining_sessions int not null default 0,
   is_admin    boolean not null default false,
+  last_active_at timestamptz,
   created_at  timestamptz not null default now()
 );
 

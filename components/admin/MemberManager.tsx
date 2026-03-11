@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/types'
+import { differenceInDays, differenceInHours, format, parseISO } from 'date-fns'
+import { ko } from 'date-fns/locale'
 
 export default function MemberManager() {
   const [members, setMembers] = useState<Profile[]>([])
@@ -12,6 +14,18 @@ export default function MemberManager() {
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
   const supabase = createClient()
+
+  const formatLastActive = (value: string | null | undefined) => {
+    if (!value) return '방문 기록 없음'
+    const last = parseISO(value)
+    const now = new Date()
+    const hours = differenceInHours(now, last)
+    if (hours < 24) {
+      return format(last, 'yyyy.MM.dd HH.mm.ss', { locale: ko })
+    }
+    const days = Math.max(1, differenceInDays(now, last))
+    return `${days}일 전`
+  }
 
   useEffect(() => {
     fetchMembers()
@@ -123,6 +137,9 @@ export default function MemberManager() {
                       <p className="text-ink text-sm font-medium truncate">
                         {member.name ?? '이름 없음'}
                       </p>
+                      <span className="text-[10px] text-slate">
+                        마지막 방문: {formatLastActive(member.last_active_at)}
+                      </span>
                       {member.is_admin && (
                         <span className="text-[10px] text-brand font-medium">
                           관리자

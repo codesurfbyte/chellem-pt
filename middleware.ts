@@ -38,6 +38,17 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(p)
   )
 
+  if (user) {
+    try {
+      await supabase
+        .from('profiles')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('id', user.id)
+    } catch {
+      // 방문 기록 업데이트 실패는 무시
+    }
+  }
+
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

@@ -126,7 +126,7 @@ export default function MemberManager() {
                 </div>
               ) : (
                 // 표시 모드
-                  <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-sand flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-medium text-slate">
@@ -137,14 +137,9 @@ export default function MemberManager() {
                       <p className="text-ink text-sm font-medium truncate">
                         {member.name ?? '이름 없음'}
                       </p>
-                      <span className="text-[10px] text-slate">
+                      <span className="text-xs text-slate">
                         마지막 방문: {formatLastActive(member.last_active_at)}
                       </span>
-                      {member.is_admin && (
-                        <span className="text-[10px] text-brand font-medium">
-                          관리자
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 flex-shrink-0">

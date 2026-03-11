@@ -12,6 +12,7 @@ export default function MemberManager() {
   const [editId, setEditId] = useState<string | null>(null)
   const [editSessions, setEditSessions] = useState(0)
   const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [editNote, setEditNote] = useState('')
   const supabase = createClient()
@@ -26,6 +27,10 @@ export default function MemberManager() {
     }
     const days = Math.max(1, differenceInDays(now, last))
     return `${days}일 전`
+  }
+
+  const formatCreatedAt = (value: string) => {
+    return format(parseISO(value), 'yyyy.MM.dd', { locale: ko })
   }
 
   useEffect(() => {
@@ -47,6 +52,7 @@ export default function MemberManager() {
     setEditSessions(member.remaining_sessions)
     setEditName(member.name ?? '')
     setEditNote(member.admin_note ?? '')
+    setEditPhone(member.phone ?? '')
   }
 
   async function saveEdit(id: string) {
@@ -56,6 +62,7 @@ export default function MemberManager() {
       .update({
         remaining_sessions: editSessions,
         name: editName || null,
+        phone: editPhone || null,
         admin_note: editNote || null,
       })
       .eq('id', id)
@@ -115,6 +122,16 @@ export default function MemberManager() {
                     </div>
                   </div>
                   <div>
+                    <label className="label">연락처</label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="input"
+                      placeholder="010-0000-0000"
+                    />
+                  </div>
+                  <div>
                     <label className="label">관리자 메모</label>
                     <textarea
                       value={editNote}
@@ -153,6 +170,12 @@ export default function MemberManager() {
                       <p className="text-ink text-sm font-medium truncate">
                         {member.name ?? '이름 없음'}
                       </p>
+                      <span className="text-xs text-slate">
+                        연락처: {member.phone ?? '-'}
+                      </span>
+                      <span className="text-xs text-slate">
+                        등록일: {formatCreatedAt(member.created_at)}
+                      </span>
                       <span className="text-xs text-slate">
                         마지막 방문: {formatLastActive(member.last_active_at)}
                       </span>

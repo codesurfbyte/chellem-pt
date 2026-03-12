@@ -23,7 +23,7 @@ type BookingRow = {
     name: string | null
     phone: string | null
     remaining_sessions: number
-  }[] | null
+  }[] | { id: string; name: string | null; phone: string | null; remaining_sessions: number } | null
 }
 
 type GroupedSlot = {
@@ -57,17 +57,24 @@ export default function BookingOverview() {
         ? endOfDay(now).toISOString()
         : endOfWeek(now, { weekStartsOn: 1 }).toISOString()
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('bookings')
       .select(`
         id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
         time_slots ( id, slot_time ),
-        profiles ( id, name, phone, remaining_sessions )
+        profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
       `)
       .eq('status', 'confirmed')
       .gte('time_slots.slot_time', from)
       .lte('time_slots.slot_time', to)
       .order('created_at', { ascending: true })
+
+    if (error) {
+      console.error('booking overview fetch error', error)
+      setSlots([])
+      setLoading(false)
+      return
+    }
 
     // slot_time 기준으로 그룹핑
     const map = new Map<string, GroupedSlot>()
@@ -258,7 +265,9 @@ export default function BookingOverview() {
                 {/* 예약자 목록 */}
                 <div className="divide-y divide-mist">
                   {slot.bookings.map((booking, idx) => {
-                    const profile = booking.profiles?.[0] ?? null
+                    const profile = Array.isArray(booking.profiles)
+                      ? booking.profiles[0] ?? null
+                      : booking.profiles ?? null
                     return (
                       <div
                         key={booking.id}

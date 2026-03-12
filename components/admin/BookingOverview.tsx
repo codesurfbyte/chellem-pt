@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, isToday, subHours } from 'date-fns'
+import { format, parseISO, isToday, subHours } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
+import { cn, getKstDayRange, getKstWeekRange } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
 type BookingRow = {
@@ -46,16 +46,9 @@ export default function BookingOverview() {
   const fetchBookings = useCallback(async () => {
     setLoading(true)
     const now = new Date()
-
-    const from =
-      view === 'today'
-        ? startOfDay(now).toISOString()
-        : startOfWeek(now, { weekStartsOn: 1 }).toISOString()
-
-    const to =
-      view === 'today'
-        ? endOfDay(now).toISOString()
-        : endOfWeek(now, { weekStartsOn: 1 }).toISOString()
+    const range = view === 'today' ? getKstDayRange(now) : getKstWeekRange(now)
+    const from = range.start.toISOString()
+    const to = range.end.toISOString()
 
     const { data, error } = await supabase
       .from('bookings')

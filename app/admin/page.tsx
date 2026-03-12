@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getWeekStart, nextWeek } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import AdminTabs from '@/components/admin/AdminTabs'
 
@@ -14,22 +15,22 @@ export default async function AdminPage() {
   }
 
   // 이번 주 요약 통계
-  const today = new Date()
-  const weekStart = new Date(today)
-  weekStart.setDate(today.getDate() - today.getDay() + 1)
-  weekStart.setHours(0, 0, 0, 0)
+  const weekStart = getWeekStart(new Date())
+  const weekEnd = nextWeek(weekStart)
 
   const [{ count: slotCount }, { count: bookingCount }, { count: memberCount }] =
     await Promise.all([
       supabase
         .from('time_slots')
         .select('*', { count: 'exact', head: true })
-        .gte('slot_time', weekStart.toISOString()),
+        .gte('slot_time', weekStart.toISOString())
+        .lt('slot_time', weekEnd.toISOString()),
       supabase
         .from('bookings')
-        .select('*', { count: 'exact', head: true })
+        .select('id, time_slots!inner(slot_time)', { count: 'exact', head: true })
         .eq('status', 'confirmed')
-        .gte('created_at', weekStart.toISOString()),
+        .gte('time_slots.slot_time', weekStart.toISOString())
+        .lt('time_slots.slot_time', weekEnd.toISOString()),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
     ])
 

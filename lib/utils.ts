@@ -7,6 +7,7 @@ import {
   addWeeks,
   subWeeks,
   startOfDay,
+  endOfDay,
   differenceInCalendarDays,
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -21,6 +22,32 @@ export function getWeekStart(date: Date = new Date()): Date {
   const zoned = toZonedTime(date, TIME_ZONE)
   const start = startOfWeek(zoned, { weekStartsOn: 1 })
   return fromZonedTime(start, TIME_ZONE)
+}
+
+export function getKstDayRange(date: Date = new Date()): {
+  start: Date
+  end: Date
+} {
+  const zoned = toZonedTime(date, TIME_ZONE)
+  const start = startOfDay(zoned)
+  const end = endOfDay(zoned)
+  return {
+    start: fromZonedTime(start, TIME_ZONE),
+    end: fromZonedTime(end, TIME_ZONE),
+  }
+}
+
+export function getKstWeekRange(date: Date = new Date()): {
+  start: Date
+  end: Date
+} {
+  const zoned = toZonedTime(date, TIME_ZONE)
+  const start = startOfWeek(zoned, { weekStartsOn: 1 })
+  const end = endOfWeek(zoned, { weekStartsOn: 1 })
+  return {
+    start: fromZonedTime(start, TIME_ZONE),
+    end: fromZonedTime(end, TIME_ZONE),
+  }
 }
 
 /** 주의 날짜 배열 (월~토) */

@@ -85,7 +85,7 @@ export default function SlotManager() {
   }, [fetchSlots])
 
   const computeWeeklyTimesFromSlots = useCallback(
-    (_baseWeekStart: Date, baseSlots: SlotWithBookings[]) => {
+    (baseWeekStart: Date, baseSlots: SlotWithBookings[]) => {
       const weekSlots = baseSlots
       const next = emptyWeekTimes()
 

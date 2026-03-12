@@ -115,7 +115,7 @@ export default function BookingOverview() {
       .sort((a, b) => new Date(a.slot_time).getTime() - new Date(b.slot_time).getTime())
 
     setSlots(groupedSlots)
-    setSlotCount(groupedSlots.length)
+    setSlotCount(slotsList.length)
     setBookingCount(bookingRows.length)
     setLoading(false)
   }, [view, supabase])

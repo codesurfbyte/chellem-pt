@@ -12,8 +12,8 @@ import {
 import { ko } from 'date-fns/locale'
 import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'
 
-export const DAYS_KO = ['월', '화', '수', '목', '금', '토']
-export const DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+export const DAYS_KO = ['월', '화', '수', '목', '금', '토', '일']
+export const DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export const TIME_ZONE = 'Asia/Seoul'
 
 /** 주의 월요일 기준 시작일 반환 */
@@ -25,7 +25,7 @@ export function getWeekStart(date: Date = new Date()): Date {
 
 /** 주의 날짜 배열 (월~토) */
 export function getWeekDays(weekStart: Date): Date[] {
-  return Array.from({ length: 6 }, (_, i) => addDays(weekStart, i))
+  return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 }
 
 export function formatDate(date: Date | string): string {

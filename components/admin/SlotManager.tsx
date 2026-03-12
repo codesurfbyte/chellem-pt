@@ -36,7 +36,7 @@ export default function SlotManager() {
 
   const emptyWeekTimes = useCallback(
     () =>
-      Array.from({ length: 6 }, (_, i) => i).reduce<Record<number, string[]>>(
+      Array.from({ length: 7 }, (_, i) => i).reduce<Record<number, string[]>>(
         (acc, idx) => {
           acc[idx] = []
           return acc

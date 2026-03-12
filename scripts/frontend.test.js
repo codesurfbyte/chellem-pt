@@ -34,6 +34,16 @@ function run() {
     slotManager.includes('주간 시간 편집'),
     'SlotManager should contain weekly editor UI'
   )
+  assert(
+    slotManager.includes('isSameDayKST'),
+    'SlotManager should use KST day matching for weekly sync'
+  )
+
+  const utils = read('lib/utils.ts')
+  assert(
+    utils.includes("TIME_ZONE = 'Asia/Seoul'"),
+    'Utils should define KST timezone constant'
+  )
 
   console.log('frontend tests passed')
 }

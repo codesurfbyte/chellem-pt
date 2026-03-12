@@ -10,6 +10,9 @@ import { useRouter } from 'next/navigation'
 type BookingRow = {
   id: string
   status: string
+  attendance_status: 'pending' | 'attended' | 'no_show'
+  attendance_checked_at: string | null
+  attendance_checked_by: string | null
   created_at: string
   time_slots: {
     id: string
@@ -35,6 +38,8 @@ export default function BookingOverview() {
   const [slots, setSlots] = useState<GroupedSlot[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [attendanceUpdatingId, setAttendanceUpdatingId] = useState<string | null>(null)
+  const [adminId, setAdminId] = useState<string | null>(null)
   const [policy, setPolicy] = useState({ bookingHours: 5, cancelHours: 5 })
   const supabase = createClient()
 
@@ -55,7 +60,7 @@ export default function BookingOverview() {
     const { data } = await supabase
       .from('bookings')
       .select(`
-        id, status, created_at,
+        id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
         time_slots ( id, slot_time ),
         profiles ( id, name, phone, remaining_sessions )
       `)
@@ -95,6 +100,12 @@ export default function BookingOverview() {
   }, [fetchBookings])
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setAdminId(data.user?.id ?? null)
+    })
+  }, [supabase])
+
+  useEffect(() => {
     supabase
       .from('booking_policies')
       .select('booking_hours, cancel_hours')
@@ -121,6 +132,30 @@ export default function BookingOverview() {
     setCancellingId(null)
     await fetchBookings()
     router.refresh()
+  }
+
+  const handleAttendance = async (
+    bookingId: string,
+    status: 'pending' | 'attended' | 'no_show'
+  ) => {
+    setAttendanceUpdatingId(bookingId)
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        attendance_status: status,
+        attendance_checked_at: new Date().toISOString(),
+        attendance_checked_by: adminId,
+      })
+      .eq('id', bookingId)
+
+    if (error) {
+      alert(error.message)
+      setAttendanceUpdatingId(null)
+      return
+    }
+
+    await fetchBookings()
+    setAttendanceUpdatingId(null)
   }
 
   const totalBookings = slots.reduce((acc, s) => acc + s.bookings.length, 0)
@@ -253,6 +288,50 @@ export default function BookingOverview() {
                         </div>
 
                         <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="text-right space-y-1">
+                            <span
+                              className={cn(
+                                'text-[10px] px-2 py-0.5 rounded-full border inline-flex items-center',
+                                booking.attendance_status === 'attended'
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                  : booking.attendance_status === 'no_show'
+                                    ? 'border-red-200 bg-red-50 text-red-600'
+                                    : 'border-mist bg-sand text-slate'
+                              )}
+                            >
+                              {booking.attendance_status === 'attended'
+                                ? '출석'
+                                : booking.attendance_status === 'no_show'
+                                  ? '노쇼'
+                                  : '미정'}
+                            </span>
+                            <div className="flex items-center gap-1 justify-end">
+                              <button
+                                onClick={() => handleAttendance(booking.id, 'attended')}
+                                disabled={attendanceUpdatingId === booking.id}
+                                className={cn(
+                                  'text-[10px] px-2 py-1 rounded-full border transition-colors',
+                                  booking.attendance_status === 'attended'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                    : 'border-mist text-slate hover:text-emerald-700 hover:border-emerald-200'
+                                )}
+                              >
+                                출석
+                              </button>
+                              <button
+                                onClick={() => handleAttendance(booking.id, 'no_show')}
+                                disabled={attendanceUpdatingId === booking.id}
+                                className={cn(
+                                  'text-[10px] px-2 py-1 rounded-full border transition-colors',
+                                  booking.attendance_status === 'no_show'
+                                    ? 'border-red-200 bg-red-50 text-red-600'
+                                    : 'border-mist text-slate hover:text-red-600 hover:border-red-200'
+                                )}
+                              >
+                                노쇼
+                              </button>
+                            </div>
+                          </div>
                           {/* 잔여 횟수 */}
                           <div className="text-right">
                             <span

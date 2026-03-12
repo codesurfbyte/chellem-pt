@@ -37,6 +37,9 @@ create table if not exists public.bookings (
   member_id   uuid not null references public.profiles(id) on delete cascade,
   slot_id     uuid not null references public.time_slots(id) on delete cascade,
   status      text not null default 'confirmed' check (status in ('confirmed', 'cancelled')),
+  attendance_status text not null default 'pending' check (attendance_status in ('pending', 'attended', 'no_show')),
+  attendance_checked_at timestamptz,
+  attendance_checked_by uuid references public.profiles(id),
   created_at  timestamptz not null default now(),
   unique (member_id, slot_id, status)  -- 같은 슬롯 중복 예약 방지
 );

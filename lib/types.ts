@@ -22,6 +22,9 @@ export type Booking = {
   member_id: string
   slot_id: string
   status: 'confirmed' | 'cancelled'
+  attendance_status?: 'pending' | 'attended' | 'no_show'
+  attendance_checked_at?: string | null
+  attendance_checked_by?: string | null
   created_at: string
   profiles?: Profile
   time_slots?: TimeSlot

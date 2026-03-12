@@ -62,12 +62,14 @@ export default function SlotManager() {
     const weekEnd = nextWeek(weekStart)
     const weekStartAt = weekStart
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('time_slots')
-      .select(`*, bookings(*, profiles(name, phone))`)
+      .select(`*, bookings(*, profiles!bookings_member_id_fkey(name, phone))`)
       .gte('slot_time', weekStartAt.toISOString())
       .lt('slot_time', weekEnd.toISOString())
       .order('slot_time', { ascending: true })
+
+    console.log(error);
 
     setSlots(
       (data ?? []).map((s) => ({
@@ -160,7 +162,7 @@ export default function SlotManager() {
     if (bookedToRemove.length > 0) {
       const confirmRemove = confirm(
         `예약된 슬롯 ${bookedToRemove.length}개가 포함되어 있습니다. ` +
-          '해당 슬롯을 삭제하고 예약을 취소하시겠습니까?'
+        '해당 슬롯을 삭제하고 예약을 취소하시겠습니까?'
       )
       if (!confirmRemove) {
         setWeeklyTimes((prev) => {

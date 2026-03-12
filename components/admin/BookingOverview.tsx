@@ -36,6 +36,7 @@ export default function BookingOverview() {
   const router = useRouter()
   const [view, setView] = useState<'today' | 'week'>('today')
   const [slots, setSlots] = useState<GroupedSlot[]>([])
+  const [slotCount, setSlotCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [attendanceUpdatingId, setAttendanceUpdatingId] = useState<string | null>(null)
@@ -50,21 +51,30 @@ export default function BookingOverview() {
     const from = range.start.toISOString()
     const to = range.end.toISOString()
 
-    const { data, error } = await supabase
-      .from('bookings')
-      .select(`
-        id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
-        time_slots ( id, slot_time ),
-        profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
-      `)
-      .eq('status', 'confirmed')
-      .gte('time_slots.slot_time', from)
-      .lte('time_slots.slot_time', to)
-      .order('created_at', { ascending: true })
+    const [{ data, error }, { count: slotTotal, error: slotError }] =
+      await Promise.all([
+        supabase
+          .from('bookings')
+          .select(`
+            id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
+            time_slots ( id, slot_time ),
+            profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
+          `)
+          .eq('status', 'confirmed')
+          .gte('time_slots.slot_time', from)
+          .lte('time_slots.slot_time', to)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('time_slots')
+          .select('*', { count: 'exact', head: true })
+          .gte('slot_time', from)
+          .lte('slot_time', to),
+      ])
 
-    if (error) {
-      console.error('booking overview fetch error', error)
+    if (error || slotError) {
+      console.error('booking overview fetch error', error ?? slotError)
       setSlots([])
+      setSlotCount(0)
       setLoading(false)
       return
     }
@@ -92,6 +102,7 @@ export default function BookingOverview() {
     )
 
     setSlots(sorted)
+    setSlotCount(slotTotal ?? 0)
     setLoading(false)
   }, [view])
 
@@ -189,7 +200,7 @@ export default function BookingOverview() {
         <div className="flex gap-4">
           <div className="card px-4 py-3 flex items-center gap-3">
             <span className="text-2xl font-display font-bold text-brand">
-              {slots.length}
+              {slotCount}
             </span>
             <span className="text-slate text-xs">PT 슬롯</span>
           </div>

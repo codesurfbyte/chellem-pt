@@ -14,10 +14,7 @@ type BookingRow = {
   attendance_checked_at: string | null
   attendance_checked_by: string | null
   created_at: string
-  time_slots: {
-    id: string
-    slot_time: string
-  }[] | null
+  slot_id: string
   profiles: {
     id: string
     name: string | null
@@ -52,37 +49,15 @@ export default function BookingOverview() {
     const from = range.start.toISOString()
     const to = range.end.toISOString()
 
-    const [
-      { data, error },
-      { count: slotTotal, error: slotError },
-      { count: bookingTotal, error: bookingError },
-    ] = await Promise.all([
-      supabase
-        .from('bookings')
-        .select(`
-          id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
-          time_slots ( id, slot_time ),
-          profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
-        `)
-        .eq('status', 'confirmed')
-        .gte('time_slots.slot_time', from)
-        .lte('time_slots.slot_time', to)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('time_slots')
-        .select('*', { count: 'exact', head: true })
-        .gte('slot_time', from)
-        .lte('slot_time', to),
-      supabase
-        .from('bookings')
-        .select('id, time_slots!inner(slot_time)', { count: 'exact', head: true })
-        .eq('status', 'confirmed')
-        .gte('time_slots.slot_time', from)
-        .lte('time_slots.slot_time', to),
-    ])
+    const { data: slotsData, error: slotsError } = await supabase
+      .from('time_slots')
+      .select('id, slot_time')
+      .gte('slot_time', from)
+      .lte('slot_time', to)
+      .order('slot_time', { ascending: true })
 
-    if (error || slotError || bookingError) {
-      console.error('booking overview fetch error', error ?? slotError ?? bookingError)
+    if (slotsError) {
+      console.error('booking overview fetch error', slotsError)
       setSlots([])
       setSlotCount(0)
       setBookingCount(0)
@@ -90,34 +65,60 @@ export default function BookingOverview() {
       return
     }
 
-    // slot_time 기준으로 그룹핑
-    const map = new Map<string, GroupedSlot>()
-    const bookingRows = (data ?? []) as BookingRow[]
-    bookingRows.forEach((b) => {
-      const slot = b.time_slots?.[0]
-      if (!slot) return
-      const key = slot.id
-      if (!map.has(key)) {
-        map.set(key, {
-          slot_id: key,
-          slot_time: slot.slot_time,
-          bookings: [],
-        })
-      }
-      map.get(key)!.bookings.push(b)
+    const slotMap = new Map<string, GroupedSlot>()
+    const slotsList = (slotsData ?? []) as Array<{ id: string; slot_time: string }>
+    const slotIds = slotsList.map((slot) => slot.id)
+
+    slotsList.forEach((slot) => {
+      slotMap.set(slot.id, {
+        slot_id: slot.id,
+        slot_time: slot.slot_time,
+        bookings: [],
+      })
     })
 
+    let bookingRows: BookingRow[] = []
+    if (slotIds.length > 0) {
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(
+          `
+          id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
+          slot_id,
+          profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
+        `
+        )
+        .eq('status', 'confirmed')
+        .in('slot_id', slotIds)
+
+      if (bookingsError) {
+        console.error('booking overview fetch error', bookingsError)
+        setSlots([])
+        setSlotCount(0)
+        setBookingCount(0)
+        setLoading(false)
+        return
+      }
+
+      bookingRows = (bookingsData ?? []) as BookingRow[]
+      bookingRows.forEach((b) => {
+        const key = b.slot_id
+        const target = slotMap.get(key)
+        if (!target) return
+        target.bookings.push(b)
+      })
+    }
+
     // slot_time 오름차순 정렬
-    const groupedSlots = Array.from(map.values())
-    const sortedByTime = groupedSlots.sort(
+    const groupedSlots = Array.from(slotMap.values()).sort(
       (a, b) => new Date(a.slot_time).getTime() - new Date(b.slot_time).getTime()
     )
 
-    setSlots(sortedByTime)
-    setSlotCount(slotTotal ?? 0)
-    setBookingCount(bookingTotal ?? 0)
+    setSlots(groupedSlots)
+    setSlotCount(slotsList.length)
+    setBookingCount(bookingRows.length)
     setLoading(false)
-  }, [view])
+  }, [view, supabase])
 
   useEffect(() => {
     fetchBookings()

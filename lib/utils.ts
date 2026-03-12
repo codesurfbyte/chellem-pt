@@ -23,10 +23,7 @@ export function getWeekStart(date: Date = new Date()): Date {
 
 /** 주의 날짜 배열 (월~토) */
 export function getWeekDays(weekStart: Date): Date[] {
-  const zonedStart = toZonedTime(weekStart, TIME_ZONE)
-  return Array.from({ length: 6 }, (_, i) =>
-    fromZonedTime(addDays(zonedStart, i), TIME_ZONE)
-  )
+  return Array.from({ length: 6 }, (_, i) => addDays(weekStart, i))
 }
 
 export function formatDate(date: Date | string): string {

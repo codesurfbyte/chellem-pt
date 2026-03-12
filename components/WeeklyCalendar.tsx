@@ -69,15 +69,15 @@ export default function WeeklyCalendar() {
       setLoading(true)
     }
 
-    const weekEnd = toISODateString(nextWeek(weekStart))
-    const weekStartStr = toISODateString(weekStart)
+    const weekEnd = nextWeek(weekStart)
+    const weekStartAt = weekStart
 
     // 슬롯 조회
     const { data: slotsData } = await supabase
       .from('time_slots')
       .select('*')
-      .gte('week_start', weekStartStr)
-      .lt('week_start', weekEnd)
+      .gte('slot_time', weekStartAt.toISOString())
+      .lt('slot_time', weekEnd.toISOString())
       .order('slot_time', { ascending: true })
 
     if (!slotsData) {

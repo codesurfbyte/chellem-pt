@@ -57,14 +57,14 @@ export default function SlotManager() {
 
   const fetchSlots = useCallback(async () => {
     setLoading(true)
-    const weekEnd = toISODateString(nextWeek(weekStart))
-    const weekStartStr = toISODateString(weekStart)
+    const weekEnd = nextWeek(weekStart)
+    const weekStartAt = weekStart
 
     const { data } = await supabase
       .from('time_slots')
       .select(`*, bookings(*, profiles(name, phone))`)
-      .gte('week_start', weekStartStr)
-      .lt('week_start', weekEnd)
+      .gte('slot_time', weekStartAt.toISOString())
+      .lt('slot_time', weekEnd.toISOString())
       .order('slot_time', { ascending: true })
 
     setSlots(
@@ -83,9 +83,8 @@ export default function SlotManager() {
   }, [fetchSlots])
 
   const computeWeeklyTimesFromSlots = useCallback(
-    (baseWeekStart: Date, baseSlots: SlotWithBookings[]) => {
-      const baseWeekStartStr = toISODateString(baseWeekStart)
-      const weekSlots = baseSlots.filter((s) => s.week_start === baseWeekStartStr)
+    (_baseWeekStart: Date, baseSlots: SlotWithBookings[]) => {
+      const weekSlots = baseSlots
       const next = emptyWeekTimes()
 
       weekSlots.forEach((slot) => {
@@ -140,13 +139,12 @@ export default function SlotManager() {
     setAddingWeek(true)
 
     const baseWeekStart = weekStart
-    const baseWeekStartStr = toISODateString(baseWeekStart)
-    const targetSlots = slots.filter((s) => s.week_start === baseWeekStartStr)
+    const targetSlots = slots
 
     const selectedTimes = selectedWeekSlots.map((t) => t.toISOString())
     const selectedTimeSet = new Set(selectedTimes)
 
-    const { deletableSlotIds, insertTimes, bookedTimeSet } = computeWeekChanges({
+    const { deletableSlotIds, insertTimes } = computeWeekChanges({
       selectedTimes,
       existingSlots: targetSlots.map((s) => ({
         id: s.id,
@@ -213,11 +211,14 @@ export default function SlotManager() {
 
     if (insertTimes.length > 0) {
       const { error } = await supabase.from('time_slots').insert(
-        insertTimes.map((t: string) => ({
-          slot_time: t,
-          max_capacity: capacity,
-          week_start: baseWeekStartStr,
-        }))
+        insertTimes.map((t: string) => {
+          const slotDate = parseISO(t)
+          return {
+            slot_time: t,
+            max_capacity: capacity,
+            week_start: toISODateString(getWeekStart(slotDate)),
+          }
+        })
       )
       if (error) {
         alert(`슬롯 추가 실패: ${error.message}`)
@@ -227,10 +228,13 @@ export default function SlotManager() {
     }
 
     if (selectedTimes.length > 0) {
+      const rangeStart = baseWeekStart
+      const rangeEnd = nextWeek(baseWeekStart)
       const { error } = await supabase
         .from('time_slots')
         .update({ max_capacity: capacity })
-        .eq('week_start', baseWeekStartStr)
+        .gte('slot_time', rangeStart.toISOString())
+        .lt('slot_time', rangeEnd.toISOString())
       if (error) {
         alert(`정원 업데이트 실패: ${error.message}`)
         setAddingWeek(false)
@@ -259,20 +263,25 @@ export default function SlotManager() {
     const targetWeekStart =
       direction === 'next' ? nextWeek(weekStart) : prevWeek(weekStart)
     const targetWeekStartStr = toISODateString(targetWeekStart)
+    const targetWeekEnd = nextWeek(targetWeekStart)
 
     const { data: targetSlots } = await supabase
       .from('time_slots')
       .select('slot_time')
-      .eq('week_start', targetWeekStartStr)
+      .gte('slot_time', targetWeekStart.toISOString())
+      .lt('slot_time', targetWeekEnd.toISOString())
 
     const targetSlotTimes = new Set((targetSlots ?? []).map((s) => s.slot_time))
 
     const shiftDays = direction === 'next' ? 7 : -7
-    const newSlots = slots.map((slot) => ({
-      slot_time: addDays(parseISO(slot.slot_time), shiftDays).toISOString(),
-      max_capacity: slot.max_capacity,
-      week_start: targetWeekStartStr,
-    }))
+    const newSlots = slots.map((slot) => {
+      const slotTime = addDays(parseISO(slot.slot_time), shiftDays)
+      return {
+        slot_time: slotTime.toISOString(),
+        max_capacity: slot.max_capacity,
+        week_start: toISODateString(getWeekStart(slotTime)),
+      }
+    })
 
     const duplicates = newSlots.filter((s) => targetSlotTimes.has(s.slot_time))
     const insertSlots = newSlots.filter((s) => !targetSlotTimes.has(s.slot_time))

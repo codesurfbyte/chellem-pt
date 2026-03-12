@@ -37,6 +37,7 @@ export default function BookingOverview() {
   const [view, setView] = useState<'today' | 'week'>('today')
   const [slots, setSlots] = useState<GroupedSlot[]>([])
   const [slotCount, setSlotCount] = useState(0)
+  const [bookingCount, setBookingCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [attendanceUpdatingId, setAttendanceUpdatingId] = useState<string | null>(null)
@@ -51,30 +52,40 @@ export default function BookingOverview() {
     const from = range.start.toISOString()
     const to = range.end.toISOString()
 
-    const [{ data, error }, { count: slotTotal, error: slotError }] =
-      await Promise.all([
-        supabase
-          .from('bookings')
-          .select(`
-            id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
-            time_slots ( id, slot_time ),
-            profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
-          `)
-          .eq('status', 'confirmed')
-          .gte('time_slots.slot_time', from)
-          .lte('time_slots.slot_time', to)
-          .order('created_at', { ascending: true }),
-        supabase
-          .from('time_slots')
-          .select('*', { count: 'exact', head: true })
-          .gte('slot_time', from)
-          .lte('slot_time', to),
-      ])
+    const [
+      { data, error },
+      { count: slotTotal, error: slotError },
+      { count: bookingTotal, error: bookingError },
+    ] = await Promise.all([
+      supabase
+        .from('bookings')
+        .select(`
+          id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
+          time_slots ( id, slot_time ),
+          profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
+        `)
+        .eq('status', 'confirmed')
+        .gte('time_slots.slot_time', from)
+        .lte('time_slots.slot_time', to)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('time_slots')
+        .select('*', { count: 'exact', head: true })
+        .gte('slot_time', from)
+        .lte('slot_time', to),
+      supabase
+        .from('bookings')
+        .select('id, time_slots!inner(slot_time)', { count: 'exact', head: true })
+        .eq('status', 'confirmed')
+        .gte('time_slots.slot_time', from)
+        .lte('time_slots.slot_time', to),
+    ])
 
-    if (error || slotError) {
-      console.error('booking overview fetch error', error ?? slotError)
+    if (error || slotError || bookingError) {
+      console.error('booking overview fetch error', error ?? slotError ?? bookingError)
       setSlots([])
       setSlotCount(0)
+      setBookingCount(0)
       setLoading(false)
       return
     }
@@ -97,12 +108,14 @@ export default function BookingOverview() {
     })
 
     // slot_time 오름차순 정렬
-    const sorted = Array.from(map.values()).sort(
+    const groupedSlots = Array.from(map.values())
+    const sortedByTime = groupedSlots.sort(
       (a, b) => new Date(a.slot_time).getTime() - new Date(b.slot_time).getTime()
     )
 
-    setSlots(sorted)
+    setSlots(sortedByTime)
     setSlotCount(slotTotal ?? 0)
+    setBookingCount(bookingTotal ?? 0)
     setLoading(false)
   }, [view])
 
@@ -169,7 +182,7 @@ export default function BookingOverview() {
     setAttendanceUpdatingId(null)
   }
 
-  const totalBookings = slots.reduce((acc, s) => acc + s.bookings.length, 0)
+  const totalBookings = bookingCount
   const now = new Date()
 
   return (

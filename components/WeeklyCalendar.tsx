@@ -11,7 +11,7 @@ import {
   nextWeek,
   prevWeek,
   toISODateString,
-  isSameDayKST,
+  getKstDayIndex,
   cn,
 } from '@/lib/utils'
 import type { Booking, SlotWithMeta } from '@/lib/types'
@@ -176,10 +176,10 @@ export default function WeeklyCalendar() {
   const weekDays = getWeekDays(weekStart)
 
   // 날짜별 슬롯 그룹핑
-  const slotsByDay = weekDays.map((day) => ({
+  const slotsByDay = weekDays.map((day, dayIndex) => ({
     day,
-    slots: slots.filter((s) =>
-      isSameDayKST(parseISO(s.slot_time), day)
+    slots: slots.filter(
+      (s) => getKstDayIndex(weekStart, parseISO(s.slot_time)) === dayIndex
     ),
   }))
 

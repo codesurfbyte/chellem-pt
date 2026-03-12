@@ -6,6 +6,8 @@ import {
   parseISO,
   addWeeks,
   subWeeks,
+  startOfDay,
+  differenceInCalendarDays,
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'
@@ -67,6 +69,13 @@ export function isSameDayKST(a: Date | string, b: Date | string): boolean {
 export function buildSlotTimeKST(day: Date, time: string): Date {
   const dayKey = toKstDateKey(day)
   return fromZonedTime(`${dayKey}T${time}:00`, TIME_ZONE)
+}
+
+export function getKstDayIndex(weekStart: Date, date: Date | string): number {
+  const base = startOfDay(toZonedTime(weekStart, TIME_ZONE))
+  const targetDate = typeof date === 'string' ? parseISO(date) : date
+  const target = startOfDay(toZonedTime(targetDate, TIME_ZONE))
+  return differenceInCalendarDays(target, base)
 }
 
 export function cn(...classes: (string | undefined | false | null)[]): string {

@@ -35,7 +35,7 @@ function run() {
     'SlotManager should contain weekly editor UI'
   )
   assert(
-    slotManager.includes('isSameDayKST'),
+    slotManager.includes('getKstDayIndex'),
     'SlotManager should use KST day matching for weekly sync'
   )
 

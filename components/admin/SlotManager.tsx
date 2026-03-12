@@ -11,7 +11,7 @@ import {
   nextWeek,
   prevWeek,
   toISODateString,
-  isSameDayKST,
+  getKstDayIndex,
   buildSlotTimeKST,
   cn,
 } from '@/lib/utils'
@@ -91,8 +91,8 @@ export default function SlotManager() {
 
       weekSlots.forEach((slot) => {
         const slotDate = parseISO(slot.slot_time)
-        const dayIndex = weekDays.findIndex((d) => isSameDayKST(d, slotDate))
-        if (dayIndex === -1) return
+        const dayIndex = getKstDayIndex(baseWeekStart, slotDate)
+        if (dayIndex < 0 || dayIndex >= weekDays.length) return
         const time = formatTime(slot.slot_time)
         const list = new Set(next[dayIndex] ?? [])
         list.add(time)
@@ -167,8 +167,8 @@ export default function SlotManager() {
           const next = { ...prev }
           bookedToRemove.forEach((slot) => {
             const slotDate = parseISO(slot.slot_time)
-            const dayIndex = weekDays.findIndex((d) => isSameDayKST(d, slotDate))
-            if (dayIndex === -1) return
+            const dayIndex = getKstDayIndex(weekStart, slotDate)
+            if (dayIndex < 0 || dayIndex >= weekDays.length) return
             const time = formatTime(slot.slot_time)
             const list = new Set(next[dayIndex] ?? [])
             list.add(time)
@@ -307,9 +307,11 @@ export default function SlotManager() {
     await fetchSlots()
   }
 
-  const slotsByDay = weekDays.map((day) => ({
+  const slotsByDay = weekDays.map((day, dayIndex) => ({
     day,
-    slots: slots.filter((s) => isSameDayKST(parseISO(s.slot_time), day)),
+    slots: slots.filter(
+      (s) => getKstDayIndex(weekStart, parseISO(s.slot_time)) === dayIndex
+    ),
   }))
 
   return (

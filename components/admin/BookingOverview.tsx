@@ -110,12 +110,12 @@ export default function BookingOverview() {
     }
 
     // slot_time 오름차순 정렬
-    const groupedSlots = Array.from(slotMap.values()).sort(
-      (a, b) => new Date(a.slot_time).getTime() - new Date(b.slot_time).getTime()
-    )
+    const groupedSlots = Array.from(slotMap.values())
+      .filter((slot) => slot.bookings.length > 0)
+      .sort((a, b) => new Date(a.slot_time).getTime() - new Date(b.slot_time).getTime())
 
     setSlots(groupedSlots)
-    setSlotCount(slotsList.length)
+    setSlotCount(groupedSlots.length)
     setBookingCount(bookingRows.length)
     setLoading(false)
   }, [view, supabase])

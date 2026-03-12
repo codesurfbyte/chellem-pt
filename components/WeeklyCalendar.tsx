@@ -11,10 +11,11 @@ import {
   nextWeek,
   prevWeek,
   toISODateString,
+  isSameDayKST,
   cn,
 } from '@/lib/utils'
 import type { Booking, SlotWithMeta } from '@/lib/types'
-import { format, parseISO, isSameDay, isPast, addMinutes, subHours } from 'date-fns'
+import { format, parseISO, isPast, addMinutes, subHours } from 'date-fns'
 import PolicyBanner from '@/components/PolicyBanner'
 
 export default function WeeklyCalendar() {
@@ -178,7 +179,7 @@ export default function WeeklyCalendar() {
   const slotsByDay = weekDays.map((day) => ({
     day,
     slots: slots.filter((s) =>
-      isSameDay(parseISO(s.slot_time), day)
+      isSameDayKST(parseISO(s.slot_time), day)
     ),
   }))
 

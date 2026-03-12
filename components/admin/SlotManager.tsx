@@ -11,10 +11,12 @@ import {
   nextWeek,
   prevWeek,
   toISODateString,
+  isSameDayKST,
+  buildSlotTimeKST,
   cn,
 } from '@/lib/utils'
 import type { TimeSlot, Booking } from '@/lib/types'
-import { parseISO, isSameDay, addDays } from 'date-fns'
+import { parseISO, addDays } from 'date-fns'
 import { computeWeekChanges } from '@/lib/slotPlanner'
 
 const TIME_OPTIONS = [
@@ -89,9 +91,9 @@ export default function SlotManager() {
 
       weekSlots.forEach((slot) => {
         const slotDate = parseISO(slot.slot_time)
-        const dayIndex = weekDays.findIndex((d) => isSameDay(d, slotDate))
+        const dayIndex = weekDays.findIndex((d) => isSameDayKST(d, slotDate))
         if (dayIndex === -1) return
-        const time = slotDate.toTimeString().slice(0, 5)
+        const time = formatTime(slot.slot_time)
         const list = new Set(next[dayIndex] ?? [])
         list.add(time)
         next[dayIndex] = Array.from(list).sort()
@@ -112,12 +114,9 @@ export default function SlotManager() {
 
   const selectedWeekSlots = useMemo(() => {
     return weekDays.flatMap((day, dayIndex) =>
-      (weeklyTimes[dayIndex] ?? []).map((time) => {
-        const [h, m] = time.split(':').map(Number)
-        const slotTime = new Date(day)
-        slotTime.setHours(h, m, 0, 0)
-        return slotTime
-      })
+      (weeklyTimes[dayIndex] ?? []).map((time) =>
+        buildSlotTimeKST(day, time)
+      )
     )
   }, [weekDays, weeklyTimes])
 
@@ -168,9 +167,9 @@ export default function SlotManager() {
           const next = { ...prev }
           bookedToRemove.forEach((slot) => {
             const slotDate = parseISO(slot.slot_time)
-            const dayIndex = weekDays.findIndex((d) => isSameDay(d, slotDate))
+            const dayIndex = weekDays.findIndex((d) => isSameDayKST(d, slotDate))
             if (dayIndex === -1) return
-            const time = slotDate.toTimeString().slice(0, 5)
+            const time = formatTime(slot.slot_time)
             const list = new Set(next[dayIndex] ?? [])
             list.add(time)
             next[dayIndex] = Array.from(list).sort()
@@ -310,7 +309,7 @@ export default function SlotManager() {
 
   const slotsByDay = weekDays.map((day) => ({
     day,
-    slots: slots.filter((s) => isSameDay(parseISO(s.slot_time), day)),
+    slots: slots.filter((s) => isSameDayKST(parseISO(s.slot_time), day)),
   }))
 
   return (

@@ -8,32 +8,43 @@ import {
   subWeeks,
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'
 
 export const DAYS_KO = ['월', '화', '수', '목', '금', '토']
 export const DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+export const TIME_ZONE = 'Asia/Seoul'
 
 /** 주의 월요일 기준 시작일 반환 */
 export function getWeekStart(date: Date = new Date()): Date {
-  return startOfWeek(date, { weekStartsOn: 1 })
+  const zoned = toZonedTime(date, TIME_ZONE)
+  const start = startOfWeek(zoned, { weekStartsOn: 1 })
+  return fromZonedTime(start, TIME_ZONE)
 }
 
 /** 주의 날짜 배열 (월~토) */
 export function getWeekDays(weekStart: Date): Date[] {
-  return Array.from({ length: 6 }, (_, i) => addDays(weekStart, i))
+  const zonedStart = toZonedTime(weekStart, TIME_ZONE)
+  return Array.from({ length: 6 }, (_, i) =>
+    fromZonedTime(addDays(zonedStart, i), TIME_ZONE)
+  )
 }
 
 export function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? parseISO(date) : date
-  return format(d, 'M/d (EEE)', { locale: ko })
+  return formatInTimeZone(date, TIME_ZONE, 'M/d (EEE)', { locale: ko })
 }
 
 export function formatTime(dateStr: string): string {
-  return format(parseISO(dateStr), 'HH:mm')
+  return formatInTimeZone(dateStr, TIME_ZONE, 'HH:mm')
 }
 
 export function formatWeekRange(weekStart: Date): string {
-  const end = endOfWeek(weekStart, { weekStartsOn: 1 })
-  return `${format(weekStart, 'yyyy년 M월 d일')} ~ ${format(end, 'M월 d일')}`
+  const zonedStart = toZonedTime(weekStart, TIME_ZONE)
+  const end = endOfWeek(zonedStart, { weekStartsOn: 1 })
+  return `${formatInTimeZone(zonedStart, TIME_ZONE, 'yyyy년 M월 d일')} ~ ${formatInTimeZone(
+    end,
+    TIME_ZONE,
+    'M월 d일'
+  )}`
 }
 
 export function nextWeek(weekStart: Date): Date {
@@ -45,7 +56,20 @@ export function prevWeek(weekStart: Date): Date {
 }
 
 export function toISODateString(date: Date): string {
-  return format(date, 'yyyy-MM-dd')
+  return formatInTimeZone(date, TIME_ZONE, 'yyyy-MM-dd')
+}
+
+export function toKstDateKey(date: Date | string): string {
+  return formatInTimeZone(date, TIME_ZONE, 'yyyy-MM-dd')
+}
+
+export function isSameDayKST(a: Date | string, b: Date | string): boolean {
+  return toKstDateKey(a) === toKstDateKey(b)
+}
+
+export function buildSlotTimeKST(day: Date, time: string): Date {
+  const dayKey = toKstDateKey(day)
+  return fromZonedTime(`${dayKey}T${time}:00`, TIME_ZONE)
 }
 
 export function cn(...classes: (string | undefined | false | null)[]): string {

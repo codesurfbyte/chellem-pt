@@ -13,10 +13,12 @@ import {
   toISODateString,
   cn,
 } from '@/lib/utils'
-import type { SlotWithMeta } from '@/lib/types'
+import type { Booking, SlotWithMeta } from '@/lib/types'
 import { format, parseISO, isSameDay, isPast, addMinutes } from 'date-fns'
 
 export default function WeeklyCalendar() {
+  type SlotCountRow = { slot_id: string }
+
   const [weekStart, setWeekStart] = useState(() => getWeekStart())
   const [slots, setSlots] = useState<SlotWithMeta[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,7 +86,8 @@ export default function WeeklyCalendar() {
         .eq('status', 'confirmed'),
     ])
 
-    const countMap = (allBookings ?? []).reduce<Record<string, number>>(
+    const allBookingRows = (allBookings ?? []) as SlotCountRow[]
+    const countMap = allBookingRows.reduce<Record<string, number>>(
       (acc, b) => {
         acc[b.slot_id] = (acc[b.slot_id] ?? 0) + 1
         return acc
@@ -92,7 +95,8 @@ export default function WeeklyCalendar() {
       {}
     )
 
-    const myBookingMap = (myBookings ?? []).reduce<Record<string, any>>(
+    const myBookingRows = (myBookings ?? []) as Booking[]
+    const myBookingMap = myBookingRows.reduce<Record<string, Booking>>(
       (acc, b) => {
         if (b) acc[b.slot_id] = b
         return acc

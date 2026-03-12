@@ -14,13 +14,13 @@ type BookingRow = {
   time_slots: {
     id: string
     slot_time: string
-  } | null
+  }[] | null
   profiles: {
     id: string
     name: string | null
     phone: string | null
     remaining_sessions: number
-  } | null
+  }[] | null
 }
 
 type GroupedSlot = {
@@ -65,18 +65,20 @@ export default function BookingOverview() {
 
     // slot_time 기준으로 그룹핑
     const map = new Map<string, GroupedSlot>()
-      ; (data ?? []).forEach((b: any) => {
-        if (!b.time_slots) return
-        const key = b.time_slots.id
-        if (!map.has(key)) {
-          map.set(key, {
-            slot_id: key,
-            slot_time: b.time_slots.slot_time,
-            bookings: [],
-          })
-        }
-        map.get(key)!.bookings.push(b)
-      })
+    const bookingRows = (data ?? []) as BookingRow[]
+    bookingRows.forEach((b) => {
+      const slot = b.time_slots?.[0]
+      if (!slot) return
+      const key = slot.id
+      if (!map.has(key)) {
+        map.set(key, {
+          slot_id: key,
+          slot_time: slot.slot_time,
+          bookings: [],
+        })
+      }
+      map.get(key)!.bookings.push(b)
+    })
 
     // slot_time 오름차순 정렬
     const sorted = Array.from(map.values()).sort(
@@ -201,63 +203,66 @@ export default function BookingOverview() {
 
                 {/* 예약자 목록 */}
                 <div className="divide-y divide-mist">
-                  {slot.bookings.map((booking, idx) => (
-                    <div
-                      key={booking.id}
-                      className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-sand transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* 순번 */}
-                        <span className="w-5 h-5 rounded-full bg-sand text-slate text-[10px] flex items-center justify-center font-medium flex-shrink-0">
-                          {idx + 1}
-                        </span>
-                        {/* 이름/아바타 */}
-                        <div className="w-8 h-8 rounded-lg bg-sand flex items-center justify-center flex-shrink-0">
-                          <span className="text-slate font-medium text-sm">
-                            {(booking.profiles?.name ?? '?')[0]}
+                  {slot.bookings.map((booking, idx) => {
+                    const profile = booking.profiles?.[0] ?? null
+                    return (
+                      <div
+                        key={booking.id}
+                        className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-sand transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* 순번 */}
+                          <span className="w-5 h-5 rounded-full bg-sand text-slate text-[10px] flex items-center justify-center font-medium flex-shrink-0">
+                            {idx + 1}
                           </span>
-                        </div>
-                        <div>
-                          <p className="text-ink text-sm font-medium">
-                            {booking.profiles?.name ?? '이름 없음'}
-                          </p>
-                          {booking.profiles?.phone && (
-                            <p className="text-slate text-xs mt-0.5">
-                              {booking.profiles.phone}
+                          {/* 이름/아바타 */}
+                          <div className="w-8 h-8 rounded-lg bg-sand flex items-center justify-center flex-shrink-0">
+                            <span className="text-slate font-medium text-sm">
+                              {(profile?.name ?? '?')[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-ink text-sm font-medium">
+                              {profile?.name ?? '이름 없음'}
                             </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        {/* 잔여 횟수 */}
-                        <div className="text-right">
-                          <span
-                            className={cn(
-                              'text-xs font-medium',
-                              (booking.profiles?.remaining_sessions ?? 0) <= 2
-                                ? 'text-red-500'
-                                : 'text-slate'
+                            {profile?.phone && (
+                              <p className="text-slate text-xs mt-0.5">
+                                {profile.phone}
+                              </p>
                             )}
-                          >
-                            잔여 {booking.profiles?.remaining_sessions ?? 0}회
-                          </span>
-                          {(booking.profiles?.remaining_sessions ?? 0) <= 2 && (
-                            <p className="text-red-500 text-[10px]">충전 필요</p>
-                          )}
+                          </div>
                         </div>
-                        {/* 관리자 취소 버튼 */}
-                        <button
-                          onClick={() => handleCancelBooking(booking.id)}
-                          disabled={cancellingId === booking.id}
-                          className="text-slate hover:text-red-500 transition-colors text-lg disabled:opacity-50"
-                          title="예약 취소"
-                        >
-                          {cancellingId === booking.id ? '…' : '×'}
-                        </button>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          {/* 잔여 횟수 */}
+                          <div className="text-right">
+                            <span
+                              className={cn(
+                                'text-xs font-medium',
+                                (profile?.remaining_sessions ?? 0) <= 2
+                                  ? 'text-red-500'
+                                  : 'text-slate'
+                              )}
+                            >
+                              잔여 {profile?.remaining_sessions ?? 0}회
+                            </span>
+                            {(profile?.remaining_sessions ?? 0) <= 2 && (
+                              <p className="text-red-500 text-[10px]">충전 필요</p>
+                            )}
+                          </div>
+                          {/* 관리자 취소 버튼 */}
+                          <button
+                            onClick={() => handleCancelBooking(booking.id)}
+                            disabled={cancellingId === booking.id}
+                            className="text-slate hover:text-red-500 transition-colors text-lg disabled:opacity-50"
+                            title="예약 취소"
+                          >
+                            {cancellingId === booking.id ? '…' : '×'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )

@@ -5,6 +5,7 @@ import SlotManager from './SlotManager'
 import MemberManager from './MemberManager'
 import NoticeManager from './NoticeManager'
 import BookingOverview from './BookingOverview'
+import PolicyManager from './PolicyManager'
 import { cn } from '@/lib/utils'
 
 const TABS = [
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'slots',    label: '시간 슬롯', icon: '📅' },
   { id: 'members',  label: '회원',     icon: '👥' },
   { id: 'notices',  label: '공지사항', icon: '📢' },
+  { id: 'policy',   label: '정책',     icon: '⚙️' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -46,6 +48,7 @@ export default function AdminTabs() {
         {activeTab === 'slots'    && <SlotManager />}
         {activeTab === 'members'  && <MemberManager />}
         {activeTab === 'notices'  && <NoticeManager />}
+        {activeTab === 'policy'   && <PolicyManager />}
       </div>
     </div>
   )

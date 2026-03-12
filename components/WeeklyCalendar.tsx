@@ -14,7 +14,8 @@ import {
   cn,
 } from '@/lib/utils'
 import type { Booking, SlotWithMeta } from '@/lib/types'
-import { format, parseISO, isSameDay, isPast, addMinutes } from 'date-fns'
+import { format, parseISO, isSameDay, isPast, addMinutes, subHours } from 'date-fns'
+import PolicyBanner from '@/components/PolicyBanner'
 
 export default function WeeklyCalendar() {
   type SlotCountRow = { slot_id: string }
@@ -26,6 +27,7 @@ export default function WeeklyCalendar() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [remainingSessions, setRemainingSessions] = useState<number | null>(null)
+  const [policy, setPolicy] = useState({ bookingHours: 5, cancelHours: 5 })
   const supabase = createClient()
 
   useEffect(() => {
@@ -43,6 +45,21 @@ export default function WeeklyCalendar() {
       .single()
     setRemainingSessions(data?.remaining_sessions ?? 0)
   }, [userId, supabase])
+
+  const fetchPolicy = useCallback(async () => {
+    const { data } = await supabase
+      .from('booking_policies')
+      .select('booking_hours, cancel_hours')
+      .eq('id', 1)
+      .single()
+
+    if (data) {
+      setPolicy({
+        bookingHours: data.booking_hours ?? 5,
+        cancelHours: data.cancel_hours ?? 5,
+      })
+    }
+  }, [supabase])
 
   const fetchSlots = useCallback(async (opts?: { keepLoading?: boolean }) => {
     if (!userId) return
@@ -120,6 +137,10 @@ export default function WeeklyCalendar() {
     fetchSlots()
   }, [fetchSlots])
 
+  useEffect(() => {
+    fetchPolicy()
+  }, [fetchPolicy])
+
   const handleBook = async (slotId: string) => {
     if (!userId) return
     if (remainingSessions !== null && remainingSessions <= 0) {
@@ -164,6 +185,16 @@ export default function WeeklyCalendar() {
   const isCurrentWeek =
     toISODateString(weekStart) === toISODateString(getWeekStart())
 
+  const now = new Date()
+  const isBookableSlot = (slot: SlotWithMeta): boolean => {
+    if (slot.my_booking) return false
+    if (slot.confirmed_count >= slot.max_capacity) return false
+    const slotTime = parseISO(slot.slot_time)
+    const bookingCutoff = subHours(slotTime, policy.bookingHours)
+    const isPastSlot = isPast(addMinutes(slotTime, 30))
+    return now.getTime() <= bookingCutoff.getTime() && !isPastSlot
+  }
+
   return (
     <div className="space-y-6">
       {/* 주 네비게이션 */}
@@ -198,6 +229,12 @@ export default function WeeklyCalendar() {
         </button>
       </div>
 
+      <PolicyBanner
+        bookingHours={policy.bookingHours}
+        cancelHours={policy.cancelHours}
+        sticky
+      />
+
       {/* 캘린더 */}
       {loading ? (
         <div className="space-y-3">
@@ -228,7 +265,7 @@ export default function WeeklyCalendar() {
                 </span>
                 <span className="text-xs text-slate">
                   {daySlots.length > 0
-                    ? `${daySlots.filter((s) => s.confirmed_count < s.max_capacity && !s.my_booking).length}개 예약 가능`
+                    ? `${daySlots.filter(isBookableSlot).length}개 예약 가능`
                     : '슬롯 없음'}
                 </span>
               </div>
@@ -245,8 +282,14 @@ export default function WeeklyCalendar() {
                       const isMyBooking = !!slot.my_booking
                       const isFull =
                         slot.confirmed_count >= slot.max_capacity && !isMyBooking
-                      const isPastSlot = isPast(addMinutes(parseISO(slot.slot_time), 30))
+                      const slotTime = parseISO(slot.slot_time)
+                      const isPastSlot = isPast(addMinutes(slotTime, 30))
+                      const bookingCutoff = subHours(slotTime, policy.bookingHours)
+                      const cancelCutoff = subHours(slotTime, policy.cancelHours)
+                      const isBookingClosed = now.getTime() > bookingCutoff.getTime()
+                      const isCancelClosed = now.getTime() > cancelCutoff.getTime()
                       const isActioning = actionLoading === slot.id
+                      const isUnavailable = isFull || isPastSlot || isBookingClosed
 
                       return (
                         <div
@@ -255,7 +298,7 @@ export default function WeeklyCalendar() {
                             'rounded-lg p-3 border transition-all duration-150',
                             isMyBooking
                               ? 'bg-sky-100 border-sky-200'
-                              : isFull || isPastSlot
+                              : isUnavailable
                                 ? 'bg-sand border-mist'
                                 : 'bg-surface border-mist hover:border-brand/30'
                           )}
@@ -266,7 +309,7 @@ export default function WeeklyCalendar() {
                                 'font-display font-semibold text-lg tracking-wide',
                                 isMyBooking
                                   ? 'text-sky-700'
-                                  : isFull || isPastSlot
+                                  : isUnavailable
                                     ? 'text-slate'
                                     : 'text-ink'
                               )}
@@ -276,6 +319,8 @@ export default function WeeklyCalendar() {
                             {isMyBooking ? (
                               <span className="badge-booked">예약됨</span>
                             ) : isFull ? (
+                              <span className="badge-full">마감</span>
+                            ) : isBookingClosed ? (
                               <span className="badge-full">마감</span>
                             ) : isPastSlot ? (
                               <span className="badge-full">종료</span>
@@ -294,17 +339,25 @@ export default function WeeklyCalendar() {
                                 onClick={() =>
                                   handleCancel(slot.my_booking!.id, slot.id)
                                 }
-                                disabled={isActioning}
+                                disabled={isActioning || isCancelClosed}
                                 className="w-full text-xs py-1.5 rounded-full text-sky-700 
                                            border border-sky-200 hover:bg-sky-100
                                            transition-all disabled:opacity-50"
                               >
-                                {isActioning ? '처리 중...' : '예약 취소'}
+                                {isActioning
+                                  ? '처리 중...'
+                                  : isCancelClosed
+                                    ? '취소 불가'
+                                    : '예약 취소'}
                               </button>
-                            ) : !isFull ? (
+                            ) : !isUnavailable ? (
                               <button
                                 onClick={() => handleBook(slot.id)}
-                                disabled={isActioning || remainingSessions === 0}
+                                disabled={
+                                  isActioning ||
+                                  remainingSessions === 0 ||
+                                  isBookingClosed
+                                }
                                 className="w-full text-xs py-1.5 rounded-full 
                                            bg-brand/10 text-brand 
                                            border border-brand/20 hover:bg-brand/20
@@ -314,7 +367,9 @@ export default function WeeklyCalendar() {
                                   ? '처리 중...'
                                   : remainingSessions === 0
                                     ? '횟수 없음'
-                                    : '예약하기'}
+                                    : isBookingClosed
+                                      ? '마감'
+                                      : '예약하기'}
                               </button>
                             ) : null
                           )}

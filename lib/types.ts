@@ -39,3 +39,10 @@ export type SlotWithMeta = TimeSlot & {
   confirmed_count: number
   my_booking: Booking | null
 }
+
+export type BookingPolicy = {
+  id: number
+  booking_hours: number
+  cancel_hours: number
+  updated_at: string
+}

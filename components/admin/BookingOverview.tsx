@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, isToday } from 'date-fns'
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, isToday, subHours } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -35,6 +35,7 @@ export default function BookingOverview() {
   const [slots, setSlots] = useState<GroupedSlot[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [policy, setPolicy] = useState({ bookingHours: 5, cancelHours: 5 })
   const supabase = createClient()
 
   const fetchBookings = useCallback(async () => {
@@ -93,6 +94,21 @@ export default function BookingOverview() {
     fetchBookings()
   }, [fetchBookings])
 
+  useEffect(() => {
+    supabase
+      .from('booking_policies')
+      .select('booking_hours, cancel_hours')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        setPolicy({
+          bookingHours: data.booking_hours ?? 5,
+          cancelHours: data.cancel_hours ?? 5,
+        })
+      })
+  }, [supabase])
+
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm('이 예약을 취소하시겠습니까?')) return
     setCancellingId(bookingId)
@@ -108,6 +124,7 @@ export default function BookingOverview() {
   }
 
   const totalBookings = slots.reduce((acc, s) => acc + s.bookings.length, 0)
+  const now = new Date()
 
   return (
     <div className="space-y-5">
@@ -168,6 +185,8 @@ export default function BookingOverview() {
           {slots.map((slot) => {
             const slotDate = parseISO(slot.slot_time)
             const todaySlot = isToday(slotDate)
+            const cancelCutoff = subHours(slotDate, policy.cancelHours)
+            const isCancelClosed = now.getTime() > cancelCutoff.getTime()
 
             return (
               <div
@@ -253,11 +272,19 @@ export default function BookingOverview() {
                           {/* 관리자 취소 버튼 */}
                           <button
                             onClick={() => handleCancelBooking(booking.id)}
-                            disabled={cancellingId === booking.id}
+                            disabled={cancellingId === booking.id || isCancelClosed}
                             className="text-slate hover:text-red-500 transition-colors text-lg disabled:opacity-50"
-                            title="예약 취소"
+                            title={
+                              isCancelClosed
+                                ? '취소 가능 시간이 지났습니다.'
+                                : '예약 취소'
+                            }
                           >
-                            {cancellingId === booking.id ? '…' : '×'}
+                            {cancellingId === booking.id
+                              ? '…'
+                              : isCancelClosed
+                                ? '—'
+                                : '×'}
                           </button>
                         </div>
                       </div>

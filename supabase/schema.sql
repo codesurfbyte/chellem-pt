@@ -50,6 +50,19 @@ create table if not exists public.notices (
   created_at timestamptz not null default now()
 );
 
+-- 예약/취소 정책 (단일 행)
+create table if not exists public.booking_policies (
+  id             int primary key default 1,
+  booking_hours  int not null default 5,
+  cancel_hours   int not null default 5,
+  updated_at     timestamptz not null default now(),
+  constraint booking_policies_singleton check (id = 1)
+);
+
+insert into public.booking_policies (id, booking_hours, cancel_hours)
+values (1, 5, 5)
+on conflict (id) do nothing;
+
 -- ==================
 -- 인덱스
 -- ==================
@@ -67,6 +80,7 @@ alter table public.profiles  enable row level security;
 alter table public.time_slots enable row level security;
 alter table public.bookings  enable row level security;
 alter table public.notices   enable row level security;
+alter table public.booking_policies enable row level security;
 
 -- profiles: 자신의 프로필 조회/수정
 create policy "users_select_own_profile"
@@ -141,6 +155,28 @@ create policy "admin_manage_notices"
     )
   );
 
+-- booking_policies: 로그인한 사용자 조회 가능
+create policy "authenticated_select_booking_policies"
+  on public.booking_policies for select
+  to authenticated
+  using (true);
+
+-- booking_policies: 관리자만 관리
+create policy "admin_manage_booking_policies"
+  on public.booking_policies for all
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.is_admin = true
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.is_admin = true
+    )
+  );
+
 -- ==================
 -- 트리거: 신규 가입 시 프로필 자동 생성
 -- ==================
@@ -209,10 +245,32 @@ as $$
 declare
   v_user uuid;
   v_remaining int;
+  v_booking_hours int;
+  v_slot_time timestamptz;
 begin
   v_user := auth.uid();
   if v_user is null then
     raise exception 'not authenticated';
+  end if;
+
+  select slot_time into v_slot_time
+  from public.time_slots
+  where id = p_slot_id;
+
+  if v_slot_time is null then
+    raise exception 'slot not found';
+  end if;
+
+  select booking_hours into v_booking_hours
+  from public.booking_policies
+  where id = 1;
+
+  if v_booking_hours is null then
+    v_booking_hours := 5;
+  end if;
+
+  if now() > v_slot_time - (v_booking_hours * interval '1 hour') then
+    raise exception '예약 가능 시간이 지났습니다.';
   end if;
 
   select remaining_sessions into v_remaining
@@ -248,6 +306,8 @@ declare
   v_member uuid;
   v_slot uuid;
   v_status text;
+  v_cancel_hours int;
+  v_slot_time timestamptz;
 begin
   v_user := auth.uid();
   if v_user is null then
@@ -273,6 +333,26 @@ begin
 
   if v_status <> 'confirmed' then
     return;
+  end if;
+
+  select cancel_hours into v_cancel_hours
+  from public.booking_policies
+  where id = 1;
+
+  if v_cancel_hours is null then
+    v_cancel_hours := 5;
+  end if;
+
+  select slot_time into v_slot_time
+  from public.time_slots
+  where id = v_slot;
+
+  if v_slot_time is null then
+    raise exception 'slot not found';
+  end if;
+
+  if now() > v_slot_time - (v_cancel_hours * interval '1 hour') then
+    raise exception '취소 가능 시간이 지났습니다.';
   end if;
 
   -- 동일 슬롯에 이미 취소된 기록이 있으면 제거 (unique 제약 회피)
@@ -303,5 +383,5 @@ grant execute on function public.cancel_booking(uuid) to authenticated;
 
 -- 샘플 공지사항
 insert into public.notices (title, content, is_pinned) values
-  ('PT 센터에 오신 것을 환영합니다! 🏋️', '예약 시스템을 통해 간편하게 PT 시간을 예약하세요. 예약은 희망 시간 1시간 전까지 가능합니다.', true),
+  ('PT 센터에 오신 것을 환영합니다! 🏋️', '예약 시스템을 통해 간편하게 PT 시간을 예약하세요. 예약/취소 정책은 예약 화면 상단에서 확인할 수 있습니다.', true),
   ('이번 주 스케줄 안내', '이번 주 시간표가 업데이트되었습니다. 원하는 시간대를 빠르게 예약하세요!', false);

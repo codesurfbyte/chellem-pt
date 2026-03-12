@@ -4,6 +4,7 @@ import { parseISO, isPast } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale'
 import CancelBookingButton from '@/components/CancelBookingButton'
+import PolicyBanner from '@/components/PolicyBanner'
 
 const TIME_ZONE = 'Asia/Seoul'
 
@@ -32,6 +33,15 @@ export default async function MyPage() {
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
 
+  const { data: policy } = await supabase
+    .from('booking_policies')
+    .select('booking_hours, cancel_hours')
+    .eq('id', 1)
+    .single()
+
+  const bookingHours = policy?.booking_hours ?? 5
+  const cancelHours = policy?.cancel_hours ?? 5
+
   const upcomingBookings =
     bookings?.filter(
       (b) => b.time_slots && !isPast(parseISO(b.time_slots.slot_time))
@@ -52,6 +62,11 @@ export default async function MyPage() {
           내 예약
         </h1>
       </div>
+
+      <PolicyBanner
+        bookingHours={bookingHours}
+        cancelHours={cancelHours}
+      />
 
       {/* 프로필 카드 */}
       <div className="card p-5 flex items-center justify-between">
@@ -111,7 +126,11 @@ export default async function MyPage() {
                     </p>
                   </div>
                 </div>
-                <CancelBookingButton bookingId={booking.id} />
+                <CancelBookingButton
+                  bookingId={booking.id}
+                  slotTime={booking.time_slots!.slot_time}
+                  cancelHours={cancelHours}
+                />
               </div>
             ))}
           </div>

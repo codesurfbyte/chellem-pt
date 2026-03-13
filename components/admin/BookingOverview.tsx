@@ -316,18 +316,6 @@ export default function BookingOverview() {
 
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <div className="text-right space-y-1">
-                            {booking.attendance_status !== 'pending' && (
-                              <span
-                                className={cn(
-                                  'text-[10px] px-2 py-0.5 rounded-full border inline-flex items-center',
-                                  booking.attendance_status === 'attended'
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : 'border-red-200 bg-red-50 text-red-600'
-                                )}
-                              >
-                                {booking.attendance_status === 'attended' ? '출석' : '노쇼'}
-                              </span>
-                            )}
                             <div className="flex items-center gap-1 justify-end">
                               <button
                                 onClick={() => handleAttendance(booking.id, 'attended')}

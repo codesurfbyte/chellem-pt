@@ -9,6 +9,8 @@ import {
   startOfDay,
   endOfDay,
   differenceInCalendarDays,
+  startOfMonth,
+  endOfMonth,
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { formatInTimeZone, toZonedTime, fromZonedTime } from 'date-fns-tz'
@@ -44,6 +46,19 @@ export function getKstWeekRange(date: Date = new Date()): {
   const zoned = toZonedTime(date, TIME_ZONE)
   const start = startOfWeek(zoned, { weekStartsOn: 1 })
   const end = endOfWeek(zoned, { weekStartsOn: 1 })
+  return {
+    start: fromZonedTime(start, TIME_ZONE),
+    end: fromZonedTime(end, TIME_ZONE),
+  }
+}
+
+export function getKstMonthRange(date: Date = new Date()): {
+  start: Date
+  end: Date
+} {
+  const zoned = toZonedTime(date, TIME_ZONE)
+  const start = startOfMonth(zoned)
+  const end = endOfMonth(zoned)
   return {
     start: fromZonedTime(start, TIME_ZONE),
     end: fromZonedTime(end, TIME_ZONE),

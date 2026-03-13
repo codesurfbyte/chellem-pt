@@ -19,6 +19,8 @@ async function getNotices(): Promise<Notice[]> {
 
 export default async function HomePage() {
   const notices = await getNotices()
+  const qrUrl =
+    'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fchellem-pt.vercel.app%2F'
 
   return (
     <div className="space-y-12">
@@ -135,6 +137,20 @@ export default async function HomePage() {
         <p className="text-slate text-sm">
           매주 새로운 시간표가 업데이트됩니다
         </p>
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-xs text-slate">
+            QR로 접속하기
+          </span>
+          <img
+            src={qrUrl}
+            alt="chellem-pt 바로가기 QR 코드"
+            className="h-40 w-40 rounded-xl border border-mist bg-white"
+            loading="lazy"
+          />
+          <span className="text-[10px] text-slate/70">
+            https://chellem-pt.vercel.app/
+          </span>
+        </div>
         <Link href="/book" className="btn-primary inline-flex">
           시간표 보기 →
         </Link>

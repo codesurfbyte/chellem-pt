@@ -10,9 +10,14 @@ type BookingRow = {
   id: string
   status: 'confirmed' | 'cancelled'
   attendance_status: 'pending' | 'attended' | 'no_show'
-  time_slots: {
-    slot_time: string
-  } | null
+  time_slots:
+    | {
+        slot_time: string
+      }
+    | {
+        slot_time: string
+      }[]
+    | null
   profiles:
     | {
         id: string
@@ -156,7 +161,9 @@ export default function StatsDashboard() {
 
     const peakMap = new Map<string, number>()
     confirmedRows.forEach((row) => {
-      const slotTime = row.time_slots?.slot_time
+      const slotTime = Array.isArray(row.time_slots)
+        ? row.time_slots[0]?.slot_time
+        : row.time_slots?.slot_time
       if (!slotTime) return
       const label = formatInTimeZone(slotTime, TIME_ZONE, 'EEE HH:00', {
         locale: ko,

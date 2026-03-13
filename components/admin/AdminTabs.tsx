@@ -6,11 +6,13 @@ import MemberManager from './MemberManager'
 import NoticeManager from './NoticeManager'
 import BookingOverview from './BookingOverview'
 import PolicyManager from './PolicyManager'
+import StatsDashboard from './StatsDashboard'
 import { cn } from '@/lib/utils'
 
 const TABS = [
   { id: 'overview', label: '예약 현황', icon: '👀' },
   { id: 'slots',    label: '시간 슬롯', icon: '📅' },
+  { id: 'stats',    label: '통계',     icon: '📈' },
   { id: 'members',  label: '회원',     icon: '👥' },
   { id: 'notices',  label: '공지사항', icon: '📢' },
   { id: 'policy',   label: '정책',     icon: '⚙️' },
@@ -46,6 +48,7 @@ export default function AdminTabs() {
       <div>
         {activeTab === 'overview' && <BookingOverview />}
         {activeTab === 'slots'    && <SlotManager />}
+        {activeTab === 'stats'    && <StatsDashboard />}
         {activeTab === 'members'  && <MemberManager />}
         {activeTab === 'notices'  && <NoticeManager />}
         {activeTab === 'policy'   && <PolicyManager />}

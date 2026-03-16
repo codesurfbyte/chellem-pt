@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import dynamic from 'next/dynamic'
 import './globals.css'
-import NavBar from '@/components/NavBar'
+
+const NavBar = dynamic(() => import('@/components/NavBar'), { ssr: false })
 
 export const metadata: Metadata = {
   title: 'Coachly - 예약 센터',

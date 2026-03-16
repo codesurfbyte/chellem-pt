@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -18,6 +19,7 @@ function LoginForm() {
   const redirectUrl = searchParams.get('redirect') ?? '/book'
   const safeRedirectUrl = redirectUrl.startsWith('/') ? redirectUrl : '/book'
   const authError = searchParams.get('error')
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   useEffect(() => {
     // 이미 로그인된 경우 리다이렉트
@@ -94,6 +96,11 @@ function LoginForm() {
             인증에 실패했습니다. 다시 시도해주세요.
           </div>
         )}
+        {resetSuccess && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-emerald-700 text-sm">
+            비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.
+          </div>
+        )}
 
         <form onSubmit={handleAuth} className="space-y-4">
           {isSignUp && (
@@ -131,6 +138,16 @@ function LoginForm() {
               required
               className="input"
             />
+            {!isSignUp && (
+              <div className="mt-2 text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-slate hover:text-ink transition-colors"
+                >
+                  비밀번호를 잊으셨나요?
+                </Link>
+              </div>
+            )}
           </div>
 
           {error && (

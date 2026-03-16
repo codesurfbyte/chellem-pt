@@ -6,6 +6,30 @@ import type { Profile } from '@/lib/types'
 import { differenceInDays, differenceInHours, format, parseISO } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
+type KakaoSharePayload = {
+  objectType: 'text'
+  text: string
+  link: {
+    mobileWebUrl: string
+    webUrl: string
+  }
+  buttonTitle?: string
+}
+
+type KakaoSDK = {
+  isInitialized: () => boolean
+  init: (appKey: string) => void
+  Share: {
+    sendDefault: (payload: KakaoSharePayload) => void
+  }
+}
+
+declare global {
+  interface Window {
+    Kakao?: KakaoSDK
+  }
+}
+
 export default function MemberManager() {
   const [members, setMembers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
@@ -16,7 +40,9 @@ export default function MemberManager() {
   const [saving, setSaving] = useState(false)
   const [editNote, setEditNote] = useState('')
   const [editFeedback, setEditFeedback] = useState('')
+  const [kakaoReady, setKakaoReady] = useState(false)
   const supabase = createClient()
+  const kakaoAppKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY ?? ''
 
   const formatLastActive = (value: string | null | undefined) => {
     if (!value) return '방문 기록 없음'
@@ -37,6 +63,33 @@ export default function MemberManager() {
   useEffect(() => {
     fetchMembers()
   }, [])
+
+  useEffect(() => {
+    if (!kakaoAppKey) return
+
+    const initializeKakao = () => {
+      if (!window.Kakao) return
+      if (!window.Kakao.isInitialized()) {
+        window.Kakao.init(kakaoAppKey)
+      }
+      setKakaoReady(true)
+    }
+
+    if (window.Kakao) {
+      initializeKakao()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://developers.kakao.com/sdk/js/kakao.min.js'
+    script.async = true
+    script.onload = initializeKakao
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [kakaoAppKey])
 
   async function fetchMembers() {
     setLoading(true)
@@ -72,6 +125,35 @@ export default function MemberManager() {
     setSaving(false)
     setEditId(null)
     await fetchMembers()
+  }
+
+  function shareFeedback(member: Profile) {
+    const feedback = member.coach_feedback?.trim()
+    if (!feedback) {
+      alert('공유할 코치 피드백이 없습니다.')
+      return
+    }
+    if (!kakaoAppKey) {
+      alert('카카오 공유 키가 설정되지 않았습니다. NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY를 확인해주세요.')
+      return
+    }
+    if (!kakaoReady || !window.Kakao) {
+      alert('카카오톡 공유를 준비 중입니다. 잠시 후 다시 시도해주세요.')
+      return
+    }
+
+    const memberName = member.name ?? '회원'
+    const baseUrl = window.location.origin
+
+    window.Kakao.Share.sendDefault({
+      objectType: 'text',
+      text: `[코치 피드백]\n${memberName}님\n\n${feedback}`,
+      link: {
+        mobileWebUrl: `${baseUrl}/my`,
+        webUrl: `${baseUrl}/my`,
+      },
+      buttonTitle: '피드백 확인',
+    })
   }
 
   if (loading) {
@@ -218,9 +300,17 @@ export default function MemberManager() {
                       )}
                       {member.coach_feedback && (
                         <div className="rounded-md bg-brand/5 border border-brand/20 px-3 py-2">
-                          <p className="text-[11px] text-brand font-medium mb-1">
-                            코치 피드백
-                          </p>
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <p className="text-[11px] text-brand font-medium">
+                              코치 피드백
+                            </p>
+                            <button
+                              onClick={() => shareFeedback(member)}
+                              className="text-[11px] px-2 py-1 rounded-md border border-brand/30 text-brand hover:bg-brand/10 transition-colors"
+                            >
+                              카카오톡 공유
+                            </button>
+                          </div>
                           <p className="text-xs text-ink/80 line-clamp-2 whitespace-pre-wrap">
                             {member.coach_feedback}
                           </p>

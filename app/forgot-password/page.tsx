@@ -17,13 +17,15 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError('')
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL?.trim() || window.location.origin
+    const origin = window.location.origin.replace(/\/$/, '')
+    const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()?.replace(/\/$/, '')
+    const baseUrl = origin || envUrl || ''
 
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email.trim().toLowerCase(),
       {
-        redirectTo: `${baseUrl}/reset-password`,
+        // Send recovery link through callback so code exchange happens server-side.
+        redirectTo: `${baseUrl}/auth/callback?next=/reset-password`,
       }
     )
 

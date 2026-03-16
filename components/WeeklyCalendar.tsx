@@ -15,7 +15,7 @@ import {
   cn,
 } from '@/lib/utils'
 import type { Booking, SlotWithMeta } from '@/lib/types'
-import { format, parseISO, isPast, addMinutes, subHours } from 'date-fns'
+import { parseISO, addMinutes, subHours } from 'date-fns'
 import PolicyBanner from '@/components/PolicyBanner'
 
 type WeeklyCalendarProps = {
@@ -200,7 +200,7 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
     if (slot.confirmed_count >= slot.max_capacity) return false
     const slotTime = parseISO(slot.slot_time)
     const bookingCutoff = subHours(slotTime, policy.bookingHours)
-    const isPastSlot = isPast(addMinutes(slotTime, 30))
+    const isPastSlot = now.getTime() > addMinutes(slotTime, 30).getTime()
     return now.getTime() <= bookingCutoff.getTime() && !isPastSlot
   }
 
@@ -292,7 +292,8 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
                       const isFull =
                         slot.confirmed_count >= slot.max_capacity && !isMyBooking
                       const slotTime = parseISO(slot.slot_time)
-                      const isPastSlot = isPast(addMinutes(slotTime, 30))
+                      const isPastSlot =
+                        now.getTime() > addMinutes(slotTime, 30).getTime()
                       const bookingCutoff = subHours(slotTime, policy.bookingHours)
                       const cancelCutoff = subHours(slotTime, policy.cancelHours)
                       const isBookingClosed = now.getTime() > bookingCutoff.getTime()

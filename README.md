@@ -49,6 +49,7 @@ Vercel 대시보드 → Settings → Environment Variables에 추가:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | 트레이너 이메일 (관리자) |
 | `NEXT_PUBLIC_APP_URL` | https://your-app.vercel.app |
+| `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY` | Kakao JavaScript 키 |
 
 ### 4단계: 관리자 계정 설정
 

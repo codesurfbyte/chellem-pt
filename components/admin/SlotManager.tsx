@@ -68,8 +68,6 @@ export default function SlotManager() {
       .lt('slot_time', weekEnd.toISOString())
       .order('slot_time', { ascending: true })
 
-    console.log(error);
-
     setSlots(
       (data ?? []).map((s) => ({
         ...s,

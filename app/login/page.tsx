@@ -9,6 +9,7 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -38,11 +39,28 @@ function LoginForm() {
     let authError = null
 
     if (isSignUp) {
+      const trimmedName = name.trim()
+      const normalizedPhone = phone.trim()
+
+      if (!trimmedName) {
+        setLoading(false)
+        setError('이름은 필수입니다.')
+        return
+      }
+      if (!normalizedPhone) {
+        setLoading(false)
+        setError('전화번호는 필수입니다.')
+        return
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
-          data: { name: name.trim() || undefined },
+          data: {
+            name: trimmedName,
+            phone: normalizedPhone,
+          },
         },
       })
       authError = signUpError
@@ -104,29 +122,66 @@ function LoginForm() {
 
         <form onSubmit={handleAuth} className="space-y-4">
           {isSignUp && (
+            <>
+              <div>
+                <label className="label">이름 *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="홍길동"
+                  required={isSignUp}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="label">전화번호 *</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(e.target.value.replace(/[^0-9]/g, ''))
+                  }
+                  placeholder="01012345678"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required={isSignUp}
+                  className="input"
+                />
+                <p className="text-[11px] text-slate mt-1">
+                  숫자만 입력 가능합니다.
+                </p>
+              </div>
+            </>
+          )}
+
+          {!isSignUp && (
             <div>
-              <label className="label">이름 (선택)</label>
+              <label className="label">이메일 *</label>
               <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="홍길동"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
                 className="input"
               />
             </div>
           )}
 
-          <div>
-            <label className="label">이메일 *</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-              className="input"
-            />
-          </div>
+          {isSignUp && (
+            <div>
+              <label className="label">이메일 *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                className="input"
+              />
+            </div>
+          )}
 
           <div>
             <label className="label">비밀번호 *</label>
@@ -156,7 +211,12 @@ function LoginForm() {
 
           <button
             type="submit"
-            disabled={loading || !email || !password}
+            disabled={
+              loading ||
+              !email ||
+              !password ||
+              (isSignUp && (!name.trim() || !phone.trim()))
+            }
             className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
             {loading ? (
@@ -179,6 +239,10 @@ function LoginForm() {
             onClick={() => {
               setIsSignUp(!isSignUp)
               setError('')
+              if (isSignUp) {
+                setName('')
+                setPhone('')
+              }
             }}
             className="text-slate hover:text-ink transition-colors"
           >

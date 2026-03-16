@@ -193,10 +193,11 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, name)
+  insert into public.profiles (id, name, phone)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1))
+    coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    nullif(regexp_replace(coalesce(new.raw_user_meta_data->>'phone', ''), '[^0-9]', '', 'g'), '')
   );
   return new;
 end;

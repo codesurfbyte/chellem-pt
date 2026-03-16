@@ -15,8 +15,10 @@ export default function NavBar() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
       if (user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
@@ -79,7 +81,7 @@ export default function NavBar() {
               href={link.href}
               className={cn(
                 'px-4 py-2 rounded-md text-sm font-medium transition-all duration-150',
-                pathname === link.href
+                mounted && pathname === link.href
                   ? 'bg-brand/10 text-brand'
                   : 'text-slate hover:text-ink hover:bg-brand/10'
               )}
@@ -148,7 +150,7 @@ export default function NavBar() {
               onClick={() => setMenuOpen(false)}
               className={cn(
                 'block px-4 py-2.5 rounded-md text-sm font-medium transition-all',
-                pathname === link.href
+                mounted && pathname === link.href
                   ? 'bg-brand/10 text-brand'
                   : 'text-slate hover:text-ink hover:bg-brand/10'
               )}

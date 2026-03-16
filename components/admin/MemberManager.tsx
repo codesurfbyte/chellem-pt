@@ -15,6 +15,7 @@ export default function MemberManager() {
   const [editPhone, setEditPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [editNote, setEditNote] = useState('')
+  const [editFeedback, setEditFeedback] = useState('')
   const supabase = createClient()
 
   const formatLastActive = (value: string | null | undefined) => {
@@ -52,6 +53,7 @@ export default function MemberManager() {
     setEditSessions(member.remaining_sessions)
     setEditName(member.name ?? '')
     setEditNote(member.admin_note ?? '')
+    setEditFeedback(member.coach_feedback ?? '')
     setEditPhone(member.phone ?? '')
   }
 
@@ -64,6 +66,7 @@ export default function MemberManager() {
         name: editName || null,
         phone: editPhone || null,
         admin_note: editNote || null,
+        coach_feedback: editFeedback || null,
       })
       .eq('id', id)
     setSaving(false)
@@ -141,6 +144,16 @@ export default function MemberManager() {
                       placeholder="회원 특이사항, 선호 시간대 등"
                     />
                   </div>
+                  <div>
+                    <label className="label">코치 피드백</label>
+                    <textarea
+                      value={editFeedback}
+                      onChange={(e) => setEditFeedback(e.target.value)}
+                      className="input resize-none"
+                      rows={3}
+                      placeholder="회원이 /my 화면에서 확인할 피드백"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveEdit(member.id)}
@@ -200,6 +213,16 @@ export default function MemberManager() {
                         <div className="rounded-md bg-sand/60 border border-mist px-3 py-2">
                           <p className="text-xs text-slate line-clamp-2 whitespace-pre-wrap">
                             {member.admin_note}
+                          </p>
+                        </div>
+                      )}
+                      {member.coach_feedback && (
+                        <div className="rounded-md bg-brand/5 border border-brand/20 px-3 py-2">
+                          <p className="text-[11px] text-brand font-medium mb-1">
+                            코치 피드백
+                          </p>
+                          <p className="text-xs text-ink/80 line-clamp-2 whitespace-pre-wrap">
+                            {member.coach_feedback}
                           </p>
                         </div>
                       )}

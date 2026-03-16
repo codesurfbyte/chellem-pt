@@ -84,6 +84,24 @@ export default async function MyPage() {
         </div>
       </div>
 
+      <section className="card-elevated p-5 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-brand" />
+          <h2 className="font-display text-lg font-semibold text-ink tracking-wide">
+            코치 피드백
+          </h2>
+        </div>
+        {profile?.coach_feedback ? (
+          <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">
+            {profile.coach_feedback}
+          </p>
+        ) : (
+          <p className="text-sm text-slate">
+            아직 등록된 피드백이 없습니다.
+          </p>
+        )}
+      </section>
+
       {/* 예정된 예약 */}
       <section className="space-y-4">
         <h2 className="font-display text-xl font-semibold text-ink tracking-wide flex items-center gap-2">

@@ -7,6 +7,7 @@ export type Profile = {
   created_at: string
   last_active_at?: string | null
   admin_note?: string | null
+  coach_feedback?: string | null
 }
 
 export type TimeSlot = {

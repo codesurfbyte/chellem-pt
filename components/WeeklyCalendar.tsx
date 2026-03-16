@@ -18,10 +18,16 @@ import type { Booking, SlotWithMeta } from '@/lib/types'
 import { format, parseISO, isPast, addMinutes, subHours } from 'date-fns'
 import PolicyBanner from '@/components/PolicyBanner'
 
-export default function WeeklyCalendar() {
+type WeeklyCalendarProps = {
+  serverNow?: string
+}
+
+export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
   type SlotCountRow = { slot_id: string }
 
-  const [weekStart, setWeekStart] = useState(() => getWeekStart())
+  const initialNow = serverNow ? new Date(serverNow) : new Date()
+  const [now, setNow] = useState(() => initialNow)
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(initialNow))
   const [slots, setSlots] = useState<SlotWithMeta[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -35,6 +41,10 @@ export default function WeeklyCalendar() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUserId(user?.id ?? null)
     })
+  }, [])
+
+  useEffect(() => {
+    setNow(new Date())
   }, [])
 
   const fetchProfile = useCallback(async () => {
@@ -184,9 +194,7 @@ export default function WeeklyCalendar() {
   }))
 
   const isCurrentWeek =
-    toISODateString(weekStart) === toISODateString(getWeekStart())
-
-  const now = new Date()
+    toISODateString(weekStart) === toISODateString(getWeekStart(now))
   const isBookableSlot = (slot: SlotWithMeta): boolean => {
     if (slot.my_booking) return false
     if (slot.confirmed_count >= slot.max_capacity) return false

@@ -1,6 +1,8 @@
 import WeeklyCalendar from '@/components/WeeklyCalendar'
 
 export default function BookPage() {
+  const serverNow = new Date().toISOString()
+
   return (
     <div className="space-y-8">
       <div>
@@ -15,7 +17,7 @@ export default function BookPage() {
         </p>
       </div>
 
-      <WeeklyCalendar />
+      <WeeklyCalendar serverNow={serverNow} />
     </div>
   )
 }

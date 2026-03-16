@@ -22,7 +22,7 @@ import { computeWeekChanges } from '@/lib/slotPlanner'
 const TIME_OPTIONS = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
   '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-  '18:00', '19:00', '20:00', '21:00',
+  '18:00', '19:00', '20:00', '21:00', '22:00',
 ]
 
 type SlotWithBookings = TimeSlot & {
@@ -291,7 +291,7 @@ export default function SlotManager() {
             }}
             className={cn('btn-primary text-xs px-4 py-2', weekEditorOpen && 'bg-slate text-white hover:bg-slate/90')}
           >
-            {weekEditorOpen ? '주간 편집 닫기' : '주간 편집'}
+            {weekEditorOpen ? '주간 시간 편집 닫기' : '주간 시간 편집'}
           </button>
         </div>
       </div>

@@ -304,12 +304,12 @@ export default function MemberManager() {
                             <p className="text-[11px] text-brand font-medium">
                               코치 피드백
                             </p>
-                            <button
+                            {/* <button
                               onClick={() => shareFeedback(member)}
                               className="text-[11px] px-2 py-1 rounded-md border border-brand/30 text-brand hover:bg-brand/10 transition-colors"
                             >
                               카카오톡 공유
-                            </button>
+                            </button> */}
                           </div>
                           <p className="text-xs text-ink/80 line-clamp-2 whitespace-pre-wrap">
                             {member.coach_feedback}

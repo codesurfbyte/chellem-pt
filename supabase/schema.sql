@@ -19,8 +19,12 @@ create table if not exists public.profiles (
   is_admin    boolean not null default false,
   last_active_at timestamptz,
   admin_note   text,
+  coach_feedback text,
   created_at  timestamptz not null default now()
 );
+
+alter table public.profiles
+  add column if not exists coach_feedback text;
 
 -- 시간 슬롯
 create table if not exists public.time_slots (

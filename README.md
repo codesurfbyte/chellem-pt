@@ -87,6 +87,14 @@ npm run dev
 
 ---
 
+## 🧩 변경 요청 템플릿
+
+기능 추가/삭제 요청은 아래 템플릿을 복사해 사용:
+
+- `docs/change-request-template.md`
+
+---
+
 ## 📁 프로젝트 구조
 
 ```

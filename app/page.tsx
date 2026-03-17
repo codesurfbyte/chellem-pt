@@ -3,9 +3,19 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import type { Notice } from '@/lib/types'
 import { format, parseISO } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale'
 
 export const revalidate = 60 // 1분마다 갱신
+
+const TIME_ZONE = 'Asia/Seoul'
+
+type UpcomingHomeBooking = {
+  id: string
+  time_slots: {
+    slot_time: string
+  } | null
+}
 
 async function getNotices(): Promise<Notice[]> {
   const supabase = await createClient()
@@ -19,9 +29,41 @@ async function getNotices(): Promise<Notice[]> {
 }
 
 export default async function HomePage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const notices = await getNotices()
   const qrUrl =
     'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fchellem-pt.vercel.app%2F'
+
+  let profileName: string | null = null
+  let upcomingBookings: UpcomingHomeBooking[] = []
+
+  if (user) {
+    const [{ data: profile }, { data: bookings }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('bookings')
+        .select('id, time_slots!inner(slot_time)')
+        .eq('member_id', user.id)
+        .eq('status', 'confirmed')
+        .gte('time_slots.slot_time', new Date().toISOString())
+        .order('slot_time', { referencedTable: 'time_slots', ascending: true })
+        .limit(3),
+    ])
+
+    profileName = profile?.name ?? null
+    upcomingBookings = (bookings ?? []) as UpcomingHomeBooking[]
+  }
+
+  const nextBooking = upcomingBookings[0]
+  const nextBookingTime = nextBooking?.time_slots?.slot_time ?? null
+  const remainingBookingCount = Math.max(upcomingBookings.length - 1, 0)
 
   return (
     <div className="space-y-12 md:space-y-16">
@@ -40,33 +82,14 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-[linear-gradient(118deg,rgba(1,135,134,0.38)_0%,rgba(1,135,134,0.12)_34%,rgba(3,14,14,0.12)_100%)]" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-end px-4 pb-6 pt-10 sm:px-6 md:pb-10 lg:px-8">
-          <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
-            <div className="max-w-3xl self-end">
-              <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-xl">
-                <Image
-                  src="/coachly-logo.png"
-                  alt="Coachly"
-                  width={22}
-                  height={22}
-                  className="rounded-full bg-white object-contain"
-                />
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
-                  Coachly Premium PT
-                </span>
-              </div>
-
-              <h1 className="mt-5 font-display text-5xl font-bold leading-[0.95] tracking-[-0.05em] text-white sm:text-6xl lg:text-[88px]">
+        <div className="relative mx-auto flex min-h-[calc(70vh-4rem)] max-w-6xl items-center px-4 pb-6 pt-10 sm:px-6 md:pb-10 lg:px-8">
+          <div className="grid w-full gap-[3.5em] lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
+            <div className="max-w-3xl">
+              <h1 className="mt-5 font-display text-5xl font-bold leading-[1] tracking-[-0.05em] text-white sm:text-6xl lg:text-[88px]">
                 루틴을 바꾸는
                 <br />
                 PT 예약 경험
               </h1>
-
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-white/82 sm:text-lg">
-                배경 이미지를 전면으로 활용해 첫인상을 만들고, 예약과 정책,
-                피드백 흐름은 더 심플하게 연결합니다. 모바일과 데스크톱 모두
-                강한 무드를 유지하는 방향입니다.
-              </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
@@ -85,27 +108,67 @@ export default async function HomePage() {
             </div>
 
             <aside className="rounded-[28px] border border-white/15 bg-[#091c1c]/45 p-5 text-white shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:p-6 lg:self-end">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
-                Weekly Flow
-              </p>
               <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight">
                 주간 PT 예약
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-white/78">
-                수업 시작 5시간 전까지 예약과 취소를 관리하고, 트레이너는 주간
-                시간표를 빠르게 편집할 수 있습니다.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
-                  Weekly Slots
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
-                  Trainer Feedback
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
-                  Policy Banner
-                </span>
-              </div>
+              {nextBookingTime ? (
+                <div className="mt-4 space-y-4">
+                  <div className="rounded-3xl border border-white/12 bg-white/8 p-4">
+                    <p className="text-xs font-medium text-white/64">
+                      {profileName ? `${profileName}님의 다음 PT` : '다음 예정 PT'}
+                    </p>
+                    <p className="mt-2 font-display text-3xl font-semibold tracking-tight">
+                      {formatInTimeZone(
+                        parseISO(nextBookingTime),
+                        TIME_ZONE,
+                        'M월 d일 HH:mm',
+                        { locale: ko }
+                      )}
+                    </p>
+                    <p className="mt-1 text-sm text-white/72">
+                      {formatInTimeZone(
+                        parseISO(nextBookingTime),
+                        TIME_ZONE,
+                        'EEEE',
+                        { locale: ko }
+                      )}{' '}
+                      예약 확정
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
+                      예정 {upcomingBookings.length}건
+                    </span>
+                    {remainingBookingCount > 0 && (
+                      <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
+                        추가 예정 {remainingBookingCount}건
+                      </span>
+                    )}
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
+                      5시간 전까지 변경 가능
+                    </span>
+                  </div>
+                </div>
+              ) : user ? (
+                <div className="mt-4 space-y-4">
+                  <p className="text-sm leading-relaxed text-white/78">
+                    아직 예정된 PT가 없습니다. <br />이번 주 시간표를 확인하고 원하는
+                    시간대를 예약해보세요.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/90">
+                      5시간 전까지 예약 가능
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <p className="text-sm leading-relaxed text-white/78">
+                    수업 시작 5시간 전까지 예약과 취소를 관리하고, 트레이너는
+                    주간 시간표를 빠르게 편집할 수 있습니다.
+                  </p>
+                </div>
+              )}
             </aside>
           </div>
         </div>
@@ -129,9 +192,8 @@ export default async function HomePage() {
               {notices.map((notice) => (
                 <div
                   key={notice.id}
-                  className={`card p-5 transition-colors hover:border-brand/30 ${
-                    notice.is_pinned ? 'border-brand/30 bg-brand/5' : ''
-                  }`}
+                  className={`card p-5 transition-colors hover:border-brand/30 ${notice.is_pinned ? 'border-brand/30 bg-brand/5' : ''
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     {notice.is_pinned && (
@@ -171,19 +233,6 @@ export default async function HomePage() {
         </section>
 
         <aside className="space-y-4">
-          <section className="card-elevated p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">
-              Booking Policy
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink">
-              예약 안내
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate">
-              예약과 취소는 수업 시작 5시간 전까지 가능합니다. 정책 변경 시
-              예약 화면에도 동일하게 반영됩니다.
-            </p>
-          </section>
-
           <section className="card-elevated p-8 text-center">
             <p className="font-display text-2xl font-semibold tracking-wide text-ink">
               지금 바로 예약하세요

@@ -88,6 +88,36 @@ npm run dev
 
 ---
 
+## 🧪 E2E 테스트 (Playwright)
+
+사전 준비:
+
+1. `.env.local`에 E2E 계정 변수 추가
+2. 브라우저 설치
+
+```bash
+npx playwright install
+```
+
+실행:
+
+```bash
+# 기본(로컬 dev 서버 자동 실행)
+npm run test:e2e
+
+# 이미 배포/개발 서버가 떠 있는 경우
+PLAYWRIGHT_BASE_URL=https://chellem-pt.vercel.app npm run test:e2e
+```
+
+필수 환경변수:
+
+- `E2E_ADMIN_EMAIL`
+- `E2E_ADMIN_PASSWORD`
+- `E2E_MEMBER_EMAIL`
+- `E2E_MEMBER_PASSWORD`
+
+---
+
 ## 🧩 변경 요청 템플릿
 
 기능 추가/삭제 요청은 아래 템플릿을 복사해 사용:

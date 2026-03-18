@@ -17,6 +17,18 @@ type UpcomingHomeBooking = {
   } | null
 }
 
+type UpcomingHomeBookingRow = {
+  id: string
+  time_slots:
+    | {
+        slot_time: string
+      }[]
+    | {
+        slot_time: string
+      }
+    | null
+}
+
 async function getNotices(): Promise<Notice[]> {
   const supabase = await createClient()
   const { data } = await supabase
@@ -58,7 +70,17 @@ export default async function HomePage() {
     ])
 
     profileName = profile?.name ?? null
-    upcomingBookings = (bookings ?? []) as UpcomingHomeBooking[]
+    upcomingBookings = (bookings ?? []).map((booking) => {
+      const row = booking as UpcomingHomeBookingRow
+      const timeSlot = Array.isArray(row.time_slots)
+        ? (row.time_slots[0] ?? null)
+        : row.time_slots
+
+      return {
+        id: row.id,
+        time_slots: timeSlot,
+      }
+    })
   }
 
   const nextBooking = upcomingBookings[0]

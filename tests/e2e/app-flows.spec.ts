@@ -63,7 +63,7 @@ test.describe('Admin Dashboard Flows', () => {
     const feedbackInput = page.getByLabel('코치 피드백').first()
     await feedbackInput.fill('E2E 코치 피드백 테스트 메시지')
     await page.getByRole('button', { name: '저장' }).first().click()
-    await expect(page.getByRole('button', { name: '카카오톡 공유' }).first()).toBeVisible()
+    await expect(page.getByText('E2E 코치 피드백 테스트 메시지').first()).toBeVisible()
 
     await page.getByRole('button', { name: /공지사항/ }).click()
     await expect(page.getByRole('button', { name: '+ 공지 작성' })).toBeVisible()

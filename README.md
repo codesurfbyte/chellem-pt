@@ -49,7 +49,6 @@ Vercel 대시보드 → Settings → Environment Variables에 추가:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | 트레이너 이메일 (관리자) |
 | `NEXT_PUBLIC_APP_URL` | https://your-app.vercel.app |
-| `NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY` | Kakao JavaScript 키 |
 
 ### 4단계: 관리자 계정 설정
 
@@ -173,7 +172,7 @@ pt-trainer/
 
 ## 💡 회원에게 링크 공유하기
 
-배포 후 아래 URL을 카카오톡 등으로 공유:
+배포 후 아래 URL을 메신저나 문자로 공유:
 
 ```
 https://your-app.vercel.app/book

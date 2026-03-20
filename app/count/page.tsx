@@ -192,6 +192,15 @@ export default function GymCoach() {
         playUrl(cache.current.counts[index] ?? null, fallback, intensity);
     }, [playUrl, speak]);
 
+    const releaseCountAudio = useCallback(() => {
+        cache.current.countPlayers.forEach((player) => {
+            if (!player) return;
+            player.pause();
+            player.src = "";
+        });
+        cache.current = { counts: [], countPlayers: [] };
+    }, []);
+
     // Claude AI 추임새 + 팁
     const fetchAI = async (exercise: string, reps: number) => {
         setLoadMsg("AI 코치 멘트 생성 중...");
@@ -349,20 +358,46 @@ export default function GymCoach() {
         targetSetsRef.current = targetSets; targetRepsRef.current = targetReps;
         restTimeRef.current = restTime; startDelayRef.current = startDelay;
         countIntervalRef.current = countInterval; exerciseRef.current = exerciseName;
-        cache.current = { counts: [], countPlayers: [] };
+        releaseCountAudio();
 
         const ai = await fetchAI(exerciseName, targetReps);
         encsRef.current = ai.encouragements || []; restTipRef.current = ai.restTip || "";
         setLoadPct(18);
-        setLoadMsg("카운트 음성 준비 중...");
-        const countUrls = Array.from({ length: targetReps }, (_, i) => `/count-audio/${i + 1}.mp3`);
-        cache.current.counts = countUrls;
-        cache.current.countPlayers = countUrls.map((url) => {
+        setLoadMsg("카운트 음성 미리 준비 중...");
+        const sourceUrls = Array.from({ length: targetReps }, (_, i) => `/count-audio/${i + 1}.mp3`);
+        cache.current.counts = sourceUrls;
+        cache.current.countPlayers = await Promise.all(sourceUrls.map((url) => new Promise<HTMLAudioElement | null>((resolve) => {
             const player = new Audio(url);
             player.preload = "auto";
+
+            const cleanup = () => {
+                player.removeEventListener("canplaythrough", handleReady);
+                player.removeEventListener("error", handleError);
+            };
+
+            const handleReady = () => {
+                cleanup();
+                resolve(player);
+            };
+
+            const handleError = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            player.addEventListener("canplaythrough", handleReady, { once: true });
+            player.addEventListener("error", handleError, { once: true });
             player.load();
-            return player;
-        });
+
+            // iOS can be conservative with preload; don't block the whole flow forever.
+            window.setTimeout(() => {
+                cleanup();
+                resolve(player.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA ? player : null);
+            }, 2000);
+        })));
+        if (cache.current.countPlayers.some((player) => !player)) {
+            setTtsWarning("일부 카운트 파일을 미리 불러오지 못해 해당 숫자는 즉시 재생되지 않을 수 있습니다.");
+        }
         setLoadPct(100);
         await new Promise(r => setTimeout(r, 350));
         startWorkout();
@@ -373,11 +408,16 @@ export default function GymCoach() {
         if (countTORef.current) clearTimeout(countTORef.current);
         if (barAnimRef.current !== null) cancelAnimationFrame(barAnimRef.current);
         window.speechSynthesis?.cancel();
+        releaseCountAudio();
         phaseRef.current = "idle";
         setScreen("settings"); setPhase("idle");
         setCurrentRep(0); setCurrentSet(1); currentSetRef.current = 1;
         setCompletedSets(0); setEncText(""); setBarPct(0);
     };
+
+    useEffect(() => {
+        return () => releaseCountAudio();
+    }, [releaseCountAudio]);
 
     const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
     const wrap: CSSProperties = {

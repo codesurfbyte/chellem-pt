@@ -74,11 +74,11 @@ export default function GymCoach() {
 
     // settings
     const [exerciseName, setExerciseName] = useState("스쿼트");
-    const [targetReps, setTargetReps] = useState(10);
-    const [targetSets, setTargetSets] = useState(3);
+    const [targetReps, setTargetReps] = useState(12);
+    const [targetSets, setTargetSets] = useState(4);
     const [startDelay, setStartDelay] = useState(10);
-    const [restTime, setRestTime] = useState(60);
-    const [countInterval, setCountInterval] = useState(2.0);
+    const [restTime, setRestTime] = useState(90);
+    const [countInterval, setCountInterval] = useState(3.0);
 
     // loading
     const [loadMsg, setLoadMsg] = useState("");
@@ -102,11 +102,11 @@ export default function GymCoach() {
     // refs
     const phaseRef = useRef("idle");
     const currentSetRef = useRef(1);
-    const targetSetsRef = useRef(3);
-    const targetRepsRef = useRef(10);
-    const restTimeRef = useRef(60);
+    const targetSetsRef = useRef(4);
+    const targetRepsRef = useRef(12);
+    const restTimeRef = useRef(90);
     const startDelayRef = useRef(10);
-    const countIntervalRef = useRef(2.0);
+    const countIntervalRef = useRef(3.0);
     const exerciseRef = useRef("스쿼트");
     const encsRef = useRef<{ rep: number; text: string }[]>([]);
     const restTipRef = useRef("");

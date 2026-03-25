@@ -29,6 +29,7 @@ function LoginForm() {
       provider: 'kakao',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirectUrl)}`,
+        scopes: 'profile_nickname profile_image',
       },
     })
 

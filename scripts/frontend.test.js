@@ -9,16 +9,16 @@ function read(file) {
 function run() {
   const login = read('app/login/page.tsx')
   assert(
-    login.includes('window.location.href'),
-    'login redirect should use full page navigation'
+    login.includes('signInWithOAuth'),
+    'login should use Kakao OAuth'
   )
   assert(
-    login.includes('전화번호 *'),
-    'signup form should require phone number'
+    login.includes("'kakao'"),
+    'login OAuth provider should be kakao'
   )
   assert(
-    login.includes("replace(/[^0-9]/g, '')"),
-    'signup phone input should allow digits only'
+    login.includes('/auth/callback'),
+    'login should redirect to auth callback'
   )
 
   const weekly = read('components/WeeklyCalendar.tsx')

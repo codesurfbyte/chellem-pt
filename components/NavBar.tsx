@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 
 export default function NavBar() {
   const pathname = usePathname()
-  const router = useRouter()
+
   const supabase = createClient()
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -51,8 +51,7 @@ export default function NavBar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
+    window.location.href = '/'
   }
 
   const navLinks = [

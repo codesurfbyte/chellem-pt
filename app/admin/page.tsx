@@ -10,9 +10,14 @@ export default async function AdminPage() {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login?redirect=/admin')
-  if (user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-    redirect('/')
-  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.is_admin) redirect('/')
 
   // 이번 주 요약 통계
   const weekStart = getWeekStart(new Date())

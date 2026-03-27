@@ -19,17 +19,31 @@ export default function NavBar() {
 
   useEffect(() => {
     setMounted(true)
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user)
-      if (user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-        setIsAdmin(true)
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+        setIsAdmin(profile?.is_admin === true)
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_, session) => {
+      async (_, session) => {
         setUser(session?.user ?? null)
-        setIsAdmin(session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL)
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single()
+          setIsAdmin(profile?.is_admin === true)
+        } else {
+          setIsAdmin(false)
+        }
       }
     )
     return () => subscription.unsubscribe()

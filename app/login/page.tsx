@@ -25,10 +25,12 @@ function LoginForm() {
     setLoading(true)
     setError('')
 
+    document.cookie = `auth_redirect=${encodeURIComponent(safeRedirectUrl)};path=/;max-age=300;samesite=lax`
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'kakao',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeRedirectUrl)}`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         scopes: 'profile_nickname profile_image',
       },
     })

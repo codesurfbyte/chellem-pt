@@ -96,7 +96,11 @@ create policy "users_select_own_profile"
 
 create policy "users_update_own_profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and is_admin = (select is_admin from public.profiles where id = auth.uid())
+  );
 
 -- profiles: 관리자는 모든 프로필 접근 가능
 create policy "admin_all_profiles"

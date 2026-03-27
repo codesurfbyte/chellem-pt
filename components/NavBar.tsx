@@ -49,9 +49,8 @@ export default function NavBar() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/'
+  const handleLogout = () => {
+    window.location.href = '/auth/signout'
   }
 
   const navLinks = [

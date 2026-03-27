@@ -40,6 +40,7 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUserId(user?.id ?? null)
+      if (!user) setLoading(false)
     })
   }, [])
 

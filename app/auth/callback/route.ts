@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import type { SetAllCookies } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -11,7 +12,31 @@ export async function GET(request: Request) {
   const safeNext = next.startsWith('/') ? next : '/book'
 
   if (code) {
-    const supabase = await createClient()
+    const response = NextResponse.redirect(`${origin}${safeNext}`)
+    response.cookies.set('auth_redirect', '', { maxAge: 0, path: '/' })
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieHeader.split(';').flatMap((c) => {
+              const trimmed = c.trim()
+              const eq = trimmed.indexOf('=')
+              if (eq < 0) return []
+              return [{ name: trimmed.slice(0, eq), value: trimmed.slice(eq + 1) }]
+            })
+          },
+          setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options ?? {})
+            )
+          },
+        },
+      }
+    )
+
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
@@ -27,8 +52,6 @@ export async function GET(request: Request) {
           { onConflict: 'id', ignoreDuplicates: true }
         )
       }
-      const response = NextResponse.redirect(`${origin}${safeNext}`)
-      response.cookies.set('auth_redirect', '', { maxAge: 0, path: '/' })
       return response
     }
   }

@@ -41,12 +41,16 @@ export async function GET(request: Request) {
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        // 카카오 메타데이터에서 이름 추출
+        const kakaoProfile = user.user_metadata?.kakao_account?.profile
         const name =
+          kakaoProfile?.nickname ||
           user.user_metadata?.name ||
           user.user_metadata?.full_name ||
           user.user_metadata?.user_name ||
           user.email?.split('@')[0] ||
           '회원'
+
         await supabase.from('profiles').upsert(
           { id: user.id, name },
           { onConflict: 'id', ignoreDuplicates: true }

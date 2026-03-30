@@ -21,14 +21,14 @@ function run() {
     'login should redirect to auth callback'
   )
 
-  const weekly = read('components/WeeklyCalendar.tsx')
+  const bookingApi = read('app/api/booking/route.ts')
   assert(
-    weekly.includes("book_slot"),
-    'WeeklyCalendar should call book_slot RPC'
+    bookingApi.includes("book_slot"),
+    'Booking API should call book_slot RPC'
   )
   assert(
-    weekly.includes("cancel_booking"),
-    'WeeklyCalendar should call cancel_booking RPC'
+    bookingApi.includes("cancel_booking"),
+    'Booking API should call cancel_booking RPC'
   )
 
   const myPage = read('app/my/page.tsx')

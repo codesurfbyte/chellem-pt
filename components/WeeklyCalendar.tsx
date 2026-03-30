@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
   getWeekStart,
   getWeekDays,
@@ -14,64 +13,47 @@ import {
   getKstDayIndex,
   cn,
 } from '@/lib/utils'
-import type { Booking, SlotWithMeta } from '@/lib/types'
+import type { SlotWithMeta } from '@/lib/types'
 import { parseISO, addMinutes, subHours } from 'date-fns'
 import PolicyBanner from '@/components/PolicyBanner'
 
 type WeeklyCalendarProps = {
   serverNow?: string
+  initialUserId?: string | null
+  initialSlots?: SlotWithMeta[] | null
+  initialRemainingSessions?: number | null
+  initialPolicy?: { bookingHours: number; cancelHours: number } | null
 }
 
-export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
-  type SlotCountRow = { slot_id: string }
-
+export default function WeeklyCalendar({
+  serverNow,
+  initialUserId,
+  initialSlots,
+  initialRemainingSessions,
+  initialPolicy,
+}: WeeklyCalendarProps) {
   const initialNow = serverNow ? new Date(serverNow) : new Date()
   const [now, setNow] = useState(() => initialNow)
   const [weekStart, setWeekStart] = useState(() => getWeekStart(initialNow))
-  const [slots, setSlots] = useState<SlotWithMeta[]>([])
-  const [loading, setLoading] = useState(true)
+  const [slots, setSlots] = useState<SlotWithMeta[]>(initialSlots ?? [])
+  const [loading, setLoading] = useState(!initialSlots)
   const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [remainingSessions, setRemainingSessions] = useState<number | null>(null)
-  const [policy, setPolicy] = useState({ bookingHours: 5, cancelHours: 5 })
-  const supabase = createClient()
+  const [userId] = useState<string | null>(initialUserId ?? null)
+  const [remainingSessions, setRemainingSessions] = useState<number | null>(initialRemainingSessions ?? null)
+  const [policy, setPolicy] = useState(initialPolicy ?? { bookingHours: 5, cancelHours: 5 })
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null)
-      if (!user) setLoading(false)
-    })
-  }, [])
+    if (!initialUserId) setLoading(false)
+  }, [initialUserId])
 
   useEffect(() => {
     setNow(new Date())
   }, [])
 
-  const fetchProfile = useCallback(async () => {
-    if (!userId) return
-    const { data } = await supabase
-      .from('profiles')
-      .select('remaining_sessions')
-      .eq('id', userId)
-      .single()
-    setRemainingSessions(data?.remaining_sessions ?? 0)
-  }, [userId, supabase])
-
-  const fetchPolicy = useCallback(async () => {
-    const { data } = await supabase
-      .from('booking_policies')
-      .select('booking_hours, cancel_hours')
-      .eq('id', 1)
-      .single()
-
-    if (data) {
-      setPolicy({
-        bookingHours: data.booking_hours ?? 5,
-        cancelHours: data.cancel_hours ?? 5,
-      })
-    }
-  }, [supabase])
+  // Track whether we've already used server-provided initial data for the current week
+  const [hasInitialData] = useState(() => !!initialSlots)
+  const [isInitialWeek, setIsInitialWeek] = useState(true)
 
   const fetchSlots = useCallback(async (opts?: { keepLoading?: boolean }) => {
     if (!userId) return
@@ -82,76 +64,37 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
     }
 
     const weekEnd = nextWeek(weekStart)
-    const weekStartAt = weekStart
+    const params = new URLSearchParams({
+      weekStart: weekStart.toISOString(),
+      weekEnd: weekEnd.toISOString(),
+    })
 
-    // 슬롯 조회
-    const { data: slotsData } = await supabase
-      .from('time_slots')
-      .select('*')
-      .gte('slot_time', weekStartAt.toISOString())
-      .lt('slot_time', weekEnd.toISOString())
-      .order('slot_time', { ascending: true })
-
-    if (!slotsData) {
+    try {
+      const res = await fetch(`/api/slots?${params}`)
+      if (!res.ok) {
+        setSlots([])
+        setLoading(false)
+        setRefreshing(false)
+        return
+      }
+      const data = await res.json()
+      setSlots(data.slots ?? [])
+      setRemainingSessions(data.remainingSessions ?? 0)
+      if (data.policy) {
+        setPolicy(data.policy)
+      }
+    } catch {
       setSlots([])
-      setLoading(false)
-      return
     }
-
-    // 확정 예약 수 + 내 예약 조회
-    const slotIds = slotsData.map((s) => s.id)
-
-    const [{ data: allBookings }, { data: myBookings }] = await Promise.all([
-      supabase
-        .from('bookings')
-        .select('slot_id')
-        .in('slot_id', slotIds)
-        .eq('status', 'confirmed'),
-      supabase
-        .from('bookings')
-        .select('*')
-        .in('slot_id', slotIds)
-        .eq('member_id', userId)
-        .eq('status', 'confirmed'),
-    ])
-
-    const allBookingRows = (allBookings ?? []) as SlotCountRow[]
-    const countMap = allBookingRows.reduce<Record<string, number>>(
-      (acc, b) => {
-        acc[b.slot_id] = (acc[b.slot_id] ?? 0) + 1
-        return acc
-      },
-      {}
-    )
-
-    const myBookingRows = (myBookings ?? []) as Booking[]
-    const myBookingMap = myBookingRows.reduce<Record<string, Booking>>(
-      (acc, b) => {
-        if (b) acc[b.slot_id] = b
-        return acc
-      },
-      {}
-    )
-
-    const enriched: SlotWithMeta[] = slotsData.map((slot) => ({
-      ...slot,
-      confirmed_count: countMap[slot.id] ?? 0,
-      my_booking: myBookingMap[slot.id] ?? null,
-    }))
-
-    setSlots(enriched)
     setLoading(false)
     setRefreshing(false)
-    await fetchProfile()
-  }, [weekStart, userId, fetchProfile, supabase])
+  }, [weekStart, userId])
 
+  // Skip initial fetch if server already provided data for current week
   useEffect(() => {
+    if (hasInitialData && isInitialWeek) return
     fetchSlots()
-  }, [fetchSlots])
-
-  useEffect(() => {
-    fetchPolicy()
-  }, [fetchPolicy])
+  }, [fetchSlots, hasInitialData, isInitialWeek])
 
   const handleBook = async (slotId: string) => {
     if (!userId) return
@@ -161,12 +104,20 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
     }
     setActionLoading(slotId)
 
-    const { error } = await supabase.rpc('book_slot', { p_slot_id: slotId })
-
-    if (error) {
-      alert(error.message)
-    } else {
-      await fetchSlots({ keepLoading: true })
+    try {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'book', slotId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error)
+      } else {
+        await fetchSlots({ keepLoading: true })
+      }
+    } catch {
+      alert('예약 중 오류가 발생했습니다.')
     }
     setActionLoading(null)
   }
@@ -174,12 +125,20 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
   const handleCancel = async (bookingId: string, slotId: string) => {
     setActionLoading(slotId)
 
-    const { error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId })
-
-    if (error) {
-      alert(error.message)
-    } else {
-      await fetchSlots({ keepLoading: true })
+    try {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', bookingId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error)
+      } else {
+        await fetchSlots({ keepLoading: true })
+      }
+    } catch {
+      alert('취소 중 오류가 발생했습니다.')
     }
     setActionLoading(null)
   }
@@ -210,7 +169,7 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
       {/* 주 네비게이션 */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setWeekStart(prevWeek(weekStart))}
+          onClick={() => { setIsInitialWeek(false); setWeekStart(prevWeek(weekStart)) }}
           disabled={isCurrentWeek}
           className={cn(
             'w-9 h-9 rounded-full flex items-center justify-center transition-all',
@@ -232,7 +191,7 @@ export default function WeeklyCalendar({ serverNow }: WeeklyCalendarProps) {
           )}
         </div>
         <button
-          onClick={() => setWeekStart(nextWeek(weekStart))}
+          onClick={() => { setIsInitialWeek(false); setWeekStart(nextWeek(weekStart)) }}
           className="w-9 h-9 rounded-full flex items-center justify-center text-slate hover:text-ink hover:bg-brand/10 transition-all"
         >
           →

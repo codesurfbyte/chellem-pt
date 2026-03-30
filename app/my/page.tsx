@@ -75,12 +75,6 @@ export default async function MyPage() {
             {profile?.name ?? user.email?.split('@')[0]}
           </p>
           <p className="text-slate text-sm mt-0.5">{user.email}</p>
-          <a
-            href="/reset-password"
-            className="inline-flex mt-2 text-xs text-slate hover:text-ink transition-colors"
-          >
-            비밀번호 변경
-          </a>
         </div>
         <div className="text-right">
           <p className="text-3xl font-display font-bold text-brand">

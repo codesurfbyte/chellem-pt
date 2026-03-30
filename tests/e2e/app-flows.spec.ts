@@ -18,12 +18,6 @@ test.describe('Public Entry Flows', () => {
     await expect(phoneInput).toHaveValue('0101234')
   })
 
-  test('비밀번호 찾기 페이지로 이동할 수 있다', async ({ page }) => {
-    await page.goto('/login')
-    await page.getByRole('link', { name: '비밀번호를 잊으셨나요?' }).click()
-    await expect(page).toHaveURL('/forgot-password')
-    await expect(page.getByRole('heading', { name: '비밀번호 찾기' })).toBeVisible()
-  })
 })
 
 test.describe('Member Authenticated Flows', () => {

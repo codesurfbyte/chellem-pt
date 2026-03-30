@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   getWeekStart,
@@ -33,6 +34,7 @@ export default function SlotManager() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart())
   const [slots, setSlots] = useState<SlotWithBookings[]>([])
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   const emptyWeekTimes = useCallback(
     () =>
@@ -77,6 +79,7 @@ export default function SlotManager() {
       }))
     )
     setLoading(false)
+    router.refresh();
   }, [weekStart])
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import dynamic from 'next/dynamic'
 import './globals.css'
+import Providers from '@/components/Providers'
 
 const NavBar = dynamic(() => import('@/components/NavBar'), { ssr: false })
 
@@ -36,11 +37,13 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen font-body text-ink">
-        <NavBar />
-        <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>
-        <footer className="text-center text-slate/70 text-xs py-10">
-          © {new Date().getFullYear()} Coachly
-        </footer>
+        <Providers>
+          <NavBar />
+          <main className="max-w-5xl mx-auto px-4 py-10">{children}</main>
+          <footer className="text-center text-slate/70 text-xs py-10">
+            © {new Date().getFullYear()} Coachly
+          </footer>
+        </Providers>
       </body>
     </html>
   )

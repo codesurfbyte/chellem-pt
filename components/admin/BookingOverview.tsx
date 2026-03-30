@@ -29,134 +29,30 @@ type GroupedSlot = {
   bookings: BookingRow[]
 }
 
+import { useBookings, useCancelBooking, useBookingPolicy } from '@/lib/hooks/query-hooks'
+import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useQueryClient } from '@tanstack/react-query'
+
 export default function BookingOverview() {
   const router = useRouter()
   const [view, setView] = useState<'today' | 'week'>('today')
-  const [slots, setSlots] = useState<GroupedSlot[]>([])
-  const [slotCount, setSlotCount] = useState(0)
-  const [bookingCount, setBookingCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const { data: slots = [], isLoading: loading } = useBookings(view)
+  const { data: policy = { bookingHours: 5, cancelHours: 5 } } = useBookingPolicy()
+  const { user: authUser } = useAuthStore()
+  const adminId = authUser?.id ?? null
+  const cancelMutation = useCancelBooking()
   const [attendanceUpdatingId, setAttendanceUpdatingId] = useState<string | null>(null)
-  const [adminId, setAdminId] = useState<string | null>(null)
-  const [policy, setPolicy] = useState({ bookingHours: 5, cancelHours: 5 })
   const supabase = createClient()
-
-  const fetchBookings = useCallback(async () => {
-    setLoading(true)
-    const now = new Date()
-    const range = view === 'today' ? getKstDayRange(now) : getKstWeekRange(now)
-    const from = range.start.toISOString()
-    const to = range.end.toISOString()
-
-    const { data: slotsData, error: slotsError } = await supabase
-      .from('time_slots')
-      .select('id, slot_time')
-      .gte('slot_time', from)
-      .lte('slot_time', to)
-      .order('slot_time', { ascending: true })
-
-    if (slotsError) {
-      console.error('booking overview fetch error', slotsError)
-      setSlots([])
-      setSlotCount(0)
-      setBookingCount(0)
-      setLoading(false)
-      return
-    }
-
-    const slotMap = new Map<string, GroupedSlot>()
-    const slotsList = (slotsData ?? []) as Array<{ id: string; slot_time: string }>
-    const slotIds = slotsList.map((slot) => slot.id)
-
-    slotsList.forEach((slot) => {
-      slotMap.set(slot.id, {
-        slot_id: slot.id,
-        slot_time: slot.slot_time,
-        bookings: [],
-      })
-    })
-
-    let bookingRows: BookingRow[] = []
-    if (slotIds.length > 0) {
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
-        .select(
-          `
-          id, status, attendance_status, attendance_checked_at, attendance_checked_by, created_at,
-          slot_id,
-          profiles:profiles!bookings_member_id_fkey ( id, name, phone, remaining_sessions )
-        `
-        )
-        .eq('status', 'confirmed')
-        .in('slot_id', slotIds)
-
-      if (bookingsError) {
-        console.error('booking overview fetch error', bookingsError)
-        setSlots([])
-        setSlotCount(0)
-        setBookingCount(0)
-        setLoading(false)
-        return
-      }
-
-      bookingRows = (bookingsData ?? []) as BookingRow[]
-      bookingRows.forEach((b) => {
-        const key = b.slot_id
-        const target = slotMap.get(key)
-        if (!target) return
-        target.bookings.push(b)
-      })
-    }
-
-    // slot_time 오름차순 정렬
-    const groupedSlots = Array.from(slotMap.values())
-      .filter((slot) => slot.bookings.length > 0)
-      .sort((a, b) => new Date(a.slot_time).getTime() - new Date(b.slot_time).getTime())
-
-    setSlots(groupedSlots)
-    setSlotCount(slotsList.length)
-    setBookingCount(bookingRows.length)
-    setLoading(false)
-  }, [view, supabase])
-
-  useEffect(() => {
-    fetchBookings()
-  }, [fetchBookings])
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setAdminId(data.user?.id ?? null)
-    })
-  }, [supabase])
-
-  useEffect(() => {
-    supabase
-      .from('booking_policies')
-      .select('booking_hours, cancel_hours')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (!data) return
-        setPolicy({
-          bookingHours: data.booking_hours ?? 5,
-          cancelHours: data.cancel_hours ?? 5,
-        })
-      })
-  }, [supabase])
+  const queryClient = useQueryClient()
 
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm('이 예약을 취소하시겠습니까?')) return
-    setCancellingId(bookingId)
-    const { error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId })
-    if (error) {
+    try {
+      await cancelMutation.mutateAsync(bookingId)
+      router.refresh()
+    } catch (error: any) {
       alert(error.message)
-      setCancellingId(null)
-      return
     }
-    setCancellingId(null)
-    await fetchBookings()
-    router.refresh()
   }
 
   const handleAttendance = async (
@@ -178,12 +74,13 @@ export default function BookingOverview() {
       setAttendanceUpdatingId(null)
       return
     }
-
-    await fetchBookings()
+    
+    queryClient.invalidateQueries({ queryKey: ['bookings'] })
     setAttendanceUpdatingId(null)
   }
 
-  const totalBookings = bookingCount
+  const slotCount = slots.length
+  const totalBookings = slots.reduce((acc, s) => acc + s.bookings.length, 0)
   const now = new Date()
 
   return (
@@ -362,7 +259,7 @@ export default function BookingOverview() {
                           {/* 관리자 취소 버튼 */}
                           <button
                             onClick={() => handleCancelBooking(booking.id)}
-                            disabled={cancellingId === booking.id || isCancelClosed}
+                            disabled={(cancelMutation.isPending && cancelMutation.variables === booking.id) || isCancelClosed}
                             className="text-slate hover:text-red-500 transition-colors text-lg disabled:opacity-50"
                             title={
                               isCancelClosed
@@ -370,7 +267,7 @@ export default function BookingOverview() {
                                 : '예약 취소'
                             }
                           >
-                            {cancellingId === booking.id
+                            {cancelMutation.isPending && cancelMutation.variables === booking.id
                               ? '…'
                               : isCancelClosed
                                 ? '—'

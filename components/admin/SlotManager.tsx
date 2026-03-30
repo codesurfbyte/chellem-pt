@@ -30,10 +30,13 @@ type SlotWithBookings = TimeSlot & {
   bookings: Array<Booking & { profiles: { name: string | null; phone: string | null } | null }>
 }
 
+import { useSlots, QUERY_KEYS } from '@/lib/hooks/query-hooks'
+import { useQueryClient } from '@tanstack/react-query'
+
 export default function SlotManager() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart())
-  const [slots, setSlots] = useState<SlotWithBookings[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: slots = [], isLoading: loading } = useSlots(weekStart)
+  const queryClient = useQueryClient()
   const router = useRouter()
 
   const emptyWeekTimes = useCallback(
@@ -58,34 +61,6 @@ export default function SlotManager() {
   const supabase = createClient()
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart])
 
-  const fetchSlots = useCallback(async () => {
-    setLoading(true)
-    const weekEnd = nextWeek(weekStart)
-    const weekStartAt = weekStart
-
-    const { data, error } = await supabase
-      .from('time_slots')
-      .select(`*, bookings(*, profiles!bookings_member_id_fkey(name, phone))`)
-      .gte('slot_time', weekStartAt.toISOString())
-      .lt('slot_time', weekEnd.toISOString())
-      .order('slot_time', { ascending: true })
-
-    setSlots(
-      (data ?? []).map((s) => ({
-        ...s,
-        bookings: (s.bookings ?? []).filter(
-          (b: Booking) => b.status === 'confirmed'
-        ),
-      }))
-    )
-    setLoading(false)
-    router.refresh();
-  }, [weekStart])
-
-  useEffect(() => {
-    fetchSlots()
-  }, [fetchSlots])
-
   const computeWeeklyTimesFromSlots = useCallback(
     (baseWeekStart: Date, baseSlots: SlotWithBookings[]) => {
       const weekSlots = baseSlots
@@ -107,12 +82,24 @@ export default function SlotManager() {
   )
 
   useEffect(() => {
+    // 로딩 중이거나 데이터가 없으면 동기화 건너뜀
+    if (loading) return
+
     if (!weekEditorOpen) {
       setWeeklyTimes(emptyWeekTimes())
       return
     }
-    setWeeklyTimes(computeWeeklyTimesFromSlots(weekStart, slots))
-  }, [weekStart, slots, weekEditorOpen, emptyWeekTimes, computeWeeklyTimesFromSlots])
+
+    const next = computeWeeklyTimesFromSlots(weekStart, slots)
+    
+    // 무한 루프 방지: 값이 실제로 변경된 경우에만 상태 업데이트
+    setWeeklyTimes(prev => {
+      const prevStr = JSON.stringify(prev)
+      const nextStr = JSON.stringify(next)
+      if (prevStr === nextStr) return prev
+      return next
+    })
+  }, [weekStart, slots, loading, weekEditorOpen, emptyWeekTimes, computeWeeklyTimesFromSlots])
 
   const selectedWeekSlots = useMemo(() => {
     return weekDays.flatMap((day, dayIndex) =>
@@ -245,19 +232,19 @@ export default function SlotManager() {
 
     setAddingWeek(false)
     setWeeklyTimes(emptyWeekTimes())
-    await fetchSlots()
+    queryClient.invalidateQueries({ queryKey: ['slots'] })
   }
 
   const handleDeleteSlot = async (slotId: string) => {
     if (!confirm('이 슬롯을 삭제하시겠습니까? 관련 예약도 모두 삭제됩니다.')) return
     await supabase.from('time_slots').delete().eq('id', slotId)
-    await fetchSlots()
+    queryClient.invalidateQueries({ queryKey: ['slots'] })
   }
 
   const slotsByDay = weekDays.map((day, dayIndex) => ({
     day,
     slots: slots.filter(
-      (s) => getKstDayIndex(weekStart, parseISO(s.slot_time)) === dayIndex
+      (s: any) => getKstDayIndex(weekStart, parseISO(s.slot_time)) === dayIndex
     ),
   }))
 
@@ -415,7 +402,7 @@ export default function SlotManager() {
                             {slot.bookings.length > 0 && (
                               <span className="text-xs text-slate/70 truncate">
                                 {slot.bookings
-                                  .map((b) => b.profiles?.name ?? '이름없음')
+                                  .map((b: any) => b.profiles?.name ?? '이름없음')
                                   .join(', ')}
                               </span>
                             )}

@@ -3,64 +3,18 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
+import { useAuthStore } from '@/lib/store/useAuthStore'
 import { cn } from '@/lib/utils'
 
 export default function NavBar() {
   const pathname = usePathname()
-
-  const supabase = createClient()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const { user, isAdmin } = useAuthStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    
-    // 1. 초기 세션 확인
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user ?? null
-      setUser(currentUser)
-      
-      if (currentUser) {
-        // 인증 후 즉시 조회 시 발생할 수 있는 락 경쟁 방지를 위해 약간의 지연 시간을 둠
-        setTimeout(async () => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', currentUser.id)
-            .single()
-          
-          setIsAdmin(profile?.is_admin === true)
-        }, 100)
-      }
-    })
-
-    // 2. 인증 상태 변경 구독
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user ?? null
-        setUser(currentUser)
-        
-        if (currentUser) {
-          setTimeout(async () => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('is_admin')
-              .eq('id', currentUser.id)
-              .single()
-            setIsAdmin(profile?.is_admin === true)
-          }, 100)
-        } else {
-          setIsAdmin(false)
-        }
-      }
-    )
-    
-    return () => subscription.unsubscribe()
   }, [])
 
   const handleLogout = () => {

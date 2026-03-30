@@ -425,7 +425,7 @@ export default function GymCoach() {
 
     // ── COMPLETE ──
     if (screen === "complete") return (
-        <div style={{ ...wrap, justifyContent: "center", padding: "40px 24px", textAlign: "center", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, maxWidth: "100%", overflow: "auto" }}>
+        <div style={{ ...wrap, justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
             <div className="up">
                 <div style={{ fontSize: 68, marginBottom: 4 }}>🏆</div>
                 <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 70, color: C.accent, letterSpacing: 5, lineHeight: 1 }}>완 료</div>
@@ -467,7 +467,7 @@ export default function GymCoach() {
         const timerProg = timerMax > 0 ? Math.max(0, (timerMax - timer) / timerMax) : 0;
         const R = 118, RSZ = (R + 7 + 2) * 2;
         return (
-            <div style={{ ...wrap, justifyContent: "space-between", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, maxWidth: "100%", overflow: "auto" }}>
+            <div style={{ ...wrap, justifyContent: "space-between" }}>
                 {/* 상단 */}
                 <div style={{ width: "100%", padding: "18px 20px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div>

@@ -1,173 +1,165 @@
 import { describe, it, expect } from 'vitest'
 
-// The URL splitting and detection logic from app/my/page.tsx:
-//   profile.coach_feedback.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-//     /^https?:\/\//.test(part) ? <a href={part}>…</a> : part
-//   )
+// The coach feedback rendering logic from app/my/page.tsx splits text on URLs
+// and renders each URL part as an <a> tag and each non-URL part as plain text.
 //
-// These tests validate that regex correctly identifies and isolates URLs
-// within coach feedback text.
+// Logic under test (inline in the component):
+//   feedback.split(/(https?:\/\/[^\s]+)/g)
+//     .map((part) => /^https?:\/\//.test(part) ? <a>{part}</a> : part)
 
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+)/g
-const IS_URL = (part: string) => /^https?:\/\//.test(part)
+const URL_TEST_REGEX = /^https?:\/\//
 
-function splitFeedback(text: string): string[] {
-  return text.split(URL_SPLIT_REGEX)
+/** Mirrors what the component does: split feedback and classify each part. */
+function parseFeedbackParts(feedback: string): Array<{ type: 'text' | 'url'; value: string }> {
+  return feedback.split(URL_SPLIT_REGEX).map((part) => ({
+    type: URL_TEST_REGEX.test(part) ? 'url' : 'text',
+    value: part,
+  }))
 }
 
-function classifyParts(text: string): Array<{ value: string; isUrl: boolean }> {
-  return splitFeedback(text).map((part) => ({ value: part, isUrl: IS_URL(part) }))
-}
-
-describe('coach_feedback URL rendering logic', () => {
-  describe('URL detection (IS_URL)', () => {
-    it('identifies https URLs', () => {
-      expect(IS_URL('https://example.com')).toBe(true)
+describe('coach feedback URL parsing (app/my/page.tsx)', () => {
+  describe('URL_SPLIT_REGEX – splitting behaviour', () => {
+    it('returns a single text part when there are no URLs', () => {
+      const parts = parseFeedbackParts('오늘 운동 잘 하셨습니다!')
+      expect(parts).toEqual([{ type: 'text', value: '오늘 운동 잘 하셨습니다!' }])
     })
 
-    it('identifies http URLs', () => {
-      expect(IS_URL('http://example.com')).toBe(true)
+    it('splits a plain https URL surrounded by text into three parts', () => {
+      const parts = parseFeedbackParts('참고 링크: https://example.com 확인해보세요.')
+      expect(parts).toHaveLength(3)
+      expect(parts[0]).toEqual({ type: 'text', value: '참고 링크: ' })
+      expect(parts[1]).toEqual({ type: 'url', value: 'https://example.com' })
+      expect(parts[2]).toEqual({ type: 'text', value: ' 확인해보세요.' })
     })
 
-    it('does not match plain text', () => {
-      expect(IS_URL('some plain text')).toBe(false)
+    it('splits a plain http URL into three parts', () => {
+      const parts = parseFeedbackParts('링크: http://example.com 끝.')
+      expect(parts[1]).toEqual({ type: 'url', value: 'http://example.com' })
     })
 
-    it('does not match empty string', () => {
-      expect(IS_URL('')).toBe(false)
+    it('handles a feedback string that is only a URL', () => {
+      const parts = parseFeedbackParts('https://example.com')
+      // split with capturing group around the whole string yields ['', url, '']
+      expect(parts.some((p) => p.type === 'url' && p.value === 'https://example.com')).toBe(true)
     })
 
-    it('does not match partial protocol (ftp://)', () => {
-      expect(IS_URL('ftp://example.com')).toBe(false)
+    it('handles a URL at the very start of the feedback', () => {
+      const parts = parseFeedbackParts('https://example.com 나머지 텍스트')
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe('https://example.com')
+      const textAfter = parts.find((p) => p.type === 'text' && p.value.includes('나머지'))
+      expect(textAfter).toBeDefined()
     })
 
-    it('does not match text that contains a URL but does not start with one', () => {
-      expect(IS_URL('see https://example.com')).toBe(false)
-    })
-  })
-
-  describe('URL splitting (splitFeedback)', () => {
-    it('returns a single-element array for text with no URLs', () => {
-      const parts = splitFeedback('No links here.')
-      expect(parts).toEqual(['No links here.'])
+    it('handles a URL at the very end of the feedback', () => {
+      const parts = parseFeedbackParts('운동 영상 보기: https://example.com')
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe('https://example.com')
+      const textBefore = parts.find((p) => p.type === 'text' && p.value.includes('운동 영상'))
+      expect(textBefore).toBeDefined()
     })
 
-    it('returns three parts when a URL appears in the middle of text', () => {
-      const parts = splitFeedback('Visit https://example.com for more.')
-      expect(parts).toEqual(['Visit ', 'https://example.com', ' for more.'])
+    it('splits multiple URLs in a single string', () => {
+      const parts = parseFeedbackParts(
+        '첫 번째: https://first.com 두 번째: https://second.com 끝'
+      )
+      const urls = parts.filter((p) => p.type === 'url')
+      expect(urls).toHaveLength(2)
+      expect(urls[0].value).toBe('https://first.com')
+      expect(urls[1].value).toBe('https://second.com')
     })
 
-    it('returns three parts when a URL appears at the start', () => {
-      const parts = splitFeedback('https://example.com is the link')
-      expect(parts).toEqual(['', 'https://example.com', ' is the link'])
+    it('preserves all non-URL text segments when multiple URLs are present', () => {
+      const parts = parseFeedbackParts('A https://a.com B https://b.com C')
+      const texts = parts.filter((p) => p.type === 'text' && p.value.trim() !== '')
+      const textValues = texts.map((p) => p.value.trim())
+      expect(textValues).toContain('A')
+      expect(textValues).toContain('B')
+      expect(textValues).toContain('C')
     })
 
-    it('returns three parts when a URL appears at the end', () => {
-      const parts = splitFeedback('Check this out: https://example.com')
-      expect(parts).toEqual(['Check this out: ', 'https://example.com', ''])
+    it('handles an empty string without throwing', () => {
+      expect(() => parseFeedbackParts('')).not.toThrow()
+      const parts = parseFeedbackParts('')
+      // An empty string split gives [''] – one empty text part
+      expect(parts).toHaveLength(1)
+      expect(parts[0]).toEqual({ type: 'text', value: '' })
     })
 
-    it('correctly splits multiple URLs', () => {
-      const parts = splitFeedback('First https://a.com and then https://b.com done.')
-      expect(parts).toEqual([
-        'First ',
-        'https://a.com',
-        ' and then ',
-        'https://b.com',
-        ' done.',
-      ])
+    it('includes query parameters and hash fragments as part of the URL', () => {
+      const url = 'https://example.com/path?foo=bar&baz=qux#section'
+      const parts = parseFeedbackParts(`링크: ${url}`)
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe(url)
     })
 
-    it('handles consecutive URLs separated by whitespace', () => {
-      const parts = splitFeedback('https://a.com https://b.com')
-      expect(parts).toEqual(['', 'https://a.com', ' ', 'https://b.com', ''])
-    })
-
-    it('handles an empty string', () => {
-      const parts = splitFeedback('')
-      expect(parts).toEqual([''])
-    })
-
-    it('handles a string that is only a URL', () => {
-      const parts = splitFeedback('https://only-url.com')
-      expect(parts).toEqual(['', 'https://only-url.com', ''])
-    })
-  })
-
-  describe('combined classification (classifyParts)', () => {
-    it('marks no parts as URLs when feedback has no links', () => {
-      const parts = classifyParts('Great progress today!')
-      expect(parts.every((p) => !p.isUrl)).toBe(true)
-      expect(parts).toEqual([{ value: 'Great progress today!', isUrl: false }])
-    })
-
-    it('marks only the URL part as a link', () => {
-      const parts = classifyParts('See https://example.com for details')
-      expect(parts).toEqual([
-        { value: 'See ', isUrl: false },
-        { value: 'https://example.com', isUrl: true },
-        { value: ' for details', isUrl: false },
-      ])
-    })
-
-    it('handles http:// URLs as links', () => {
-      const parts = classifyParts('Go to http://example.com now')
-      expect(parts).toEqual([
-        { value: 'Go to ', isUrl: false },
-        { value: 'http://example.com', isUrl: true },
-        { value: ' now', isUrl: false },
-      ])
-    })
-
-    it('handles URLs with query parameters', () => {
-      const url = 'https://example.com/path?foo=bar&baz=1'
-      const parts = classifyParts(`Link: ${url}`)
-      expect(parts).toEqual([
-        { value: 'Link: ', isUrl: false },
-        { value: url, isUrl: true },
-        { value: '', isUrl: false },
-      ])
-    })
-
-    it('handles URLs with path segments', () => {
+    it('includes path segments as part of the URL', () => {
       const url = 'https://example.com/a/b/c'
-      const parts = classifyParts(url)
-      expect(parts).toEqual([
-        { value: '', isUrl: false },
-        { value: url, isUrl: true },
-        { value: '', isUrl: false },
-      ])
+      const parts = parseFeedbackParts(`보기: ${url} 참고`)
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe(url)
     })
 
-    it('handles multiline feedback with a URL on a later line', () => {
-      const text = '운동 잘 하셨습니다.\n참고 자료: https://example.com\n계속 화이팅!'
-      const parts = classifyParts(text)
-      expect(parts).toEqual([
-        { value: '운동 잘 하셨습니다.\n참고 자료: ', isUrl: false },
-        { value: 'https://example.com', isUrl: true },
-        { value: '\n계속 화이팅!', isUrl: false },
-      ])
+    it('does not classify a bare domain without scheme as a URL', () => {
+      const parts = parseFeedbackParts('example.com 이 주소')
+      expect(parts.every((p) => p.type === 'text')).toBe(true)
     })
 
-    it('handles multiple URLs: all URL parts are marked as links', () => {
-      const text = 'A: https://a.com B: https://b.com'
-      const parts = classifyParts(text)
-      const urlParts = parts.filter((p) => p.isUrl)
-      expect(urlParts).toHaveLength(2)
-      expect(urlParts[0].value).toBe('https://a.com')
-      expect(urlParts[1].value).toBe('https://b.com')
+    it('handles consecutive URLs separated only by whitespace', () => {
+      const parts = parseFeedbackParts('https://one.com https://two.com')
+      const urls = parts.filter((p) => p.type === 'url')
+      expect(urls).toHaveLength(2)
+      expect(urls[0].value).toBe('https://one.com')
+      expect(urls[1].value).toBe('https://two.com')
     })
 
-    it('does not treat non-http protocols as URLs', () => {
-      const parts = classifyParts('Check ftp://example.com or mailto:a@b.com')
-      expect(parts.every((p) => !p.isUrl)).toBe(true)
+    it('preserves newlines in non-URL text (whitespace-pre-wrap rendering)', () => {
+      const feedback = '첫째 줄\nhttps://example.com\n셋째 줄'
+      const parts = parseFeedbackParts(feedback)
+      const textParts = parts.filter((p) => p.type === 'text')
+      expect(textParts.some((p) => p.value.includes('\n'))).toBe(true)
+    })
+  })
+
+  describe('URL_TEST_REGEX – URL classification', () => {
+    it('classifies https:// strings as URLs', () => {
+      expect(URL_TEST_REGEX.test('https://example.com')).toBe(true)
     })
 
-    // Regression: empty feedback triggers the falsy branch (no feedback message shown),
-    // so the splitting logic is never reached for null/undefined values.
-    it('splitting an empty string yields a single non-URL empty part', () => {
-      const parts = classifyParts('')
-      expect(parts).toEqual([{ value: '', isUrl: false }])
+    it('classifies http:// strings as URLs', () => {
+      expect(URL_TEST_REGEX.test('http://example.com')).toBe(true)
+    })
+
+    it('does not classify plain text as a URL', () => {
+      expect(URL_TEST_REGEX.test('just some text')).toBe(false)
+    })
+
+    it('does not classify a bare domain as a URL', () => {
+      expect(URL_TEST_REGEX.test('example.com')).toBe(false)
+    })
+
+    it('does not classify ftp:// or other schemes as URLs', () => {
+      expect(URL_TEST_REGEX.test('ftp://example.com')).toBe(false)
+    })
+
+    it('does not classify an empty string as a URL', () => {
+      expect(URL_TEST_REGEX.test('')).toBe(false)
+    })
+  })
+
+  describe('roundtrip – split parts reassemble to original text', () => {
+    it('rejoining all part values produces the original feedback string', () => {
+      const original = '피드백: https://example.com/path?q=1 더 보기: https://more.com 끝'
+      const parts = parseFeedbackParts(original)
+      const rejoined = parts.map((p) => p.value).join('')
+      expect(rejoined).toBe(original)
+    })
+
+    it('rejoining plain text (no URLs) is a no-op', () => {
+      const original = '일반 텍스트만 있는 피드백입니다.'
+      const parts = parseFeedbackParts(original)
+      expect(parts.map((p) => p.value).join('')).toBe(original)
     })
   })
 })

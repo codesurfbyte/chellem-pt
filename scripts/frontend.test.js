@@ -55,7 +55,7 @@ function run() {
     'My page coach_feedback links should have noopener noreferrer for security'
   )
   assert(
-    myPage.includes('href={part}'),
+    myPage.includes('href={url}'),
     'My page coach_feedback links should use the URL part as href'
   )
   assert(

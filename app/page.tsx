@@ -6,8 +6,6 @@ import { format, parseISO } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale'
 
-export const revalidate = 60 // 1분마다 갱신
-
 const TIME_ZONE = 'Asia/Seoul'
 
 type UpcomingHomeBooking = {

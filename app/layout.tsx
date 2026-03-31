@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
 import './globals.css'
 import Providers from '@/components/Providers'
-
-const NavBar = dynamic(() => import('@/components/NavBar'), { ssr: false })
+import NavBar from '@/components/NavBar'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://chellem-pt.vercel.app'),

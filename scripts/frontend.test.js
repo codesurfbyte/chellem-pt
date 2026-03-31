@@ -37,6 +37,32 @@ function run() {
     'My page should render times in a fixed timezone'
   )
 
+  // Coach feedback URL link rendering
+  assert(
+    myPage.includes('https?:\\/\\/'),
+    'My page coach_feedback should detect URLs using https? regex'
+  )
+  assert(
+    myPage.includes('split('),
+    'My page coach_feedback should split text to extract URLs'
+  )
+  assert(
+    myPage.includes('target="_blank"'),
+    'My page coach_feedback links should open in a new tab'
+  )
+  assert(
+    myPage.includes('rel="noopener noreferrer"'),
+    'My page coach_feedback links should have noopener noreferrer for security'
+  )
+  assert(
+    myPage.includes('href={part}'),
+    'My page coach_feedback links should use the URL part as href'
+  )
+  assert(
+    myPage.includes('아직 등록된 피드백이 없습니다'),
+    'My page should show fallback message when coach_feedback is absent'
+  )
+
   const slotManager = read('components/admin/SlotManager.tsx')
   assert(
     slotManager.includes('주간 시간 편집'),

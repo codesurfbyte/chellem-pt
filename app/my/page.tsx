@@ -93,7 +93,21 @@ export default async function MyPage() {
         </div>
         {profile?.coach_feedback ? (
           <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">
-            {profile.coach_feedback}
+            {profile.coach_feedback.split(/(https?:\/\/[^\s]+)/g).map((part: string, i: number) =>
+              /^https?:\/\//.test(part) ? (
+                <a
+                  key={i}
+                  href={part}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand underline underline-offset-2 break-all"
+                >
+                  {part}
+                </a>
+              ) : (
+                part
+              )
+            )}
           </p>
         ) : (
           <p className="text-sm text-slate">

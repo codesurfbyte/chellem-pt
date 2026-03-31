@@ -162,4 +162,45 @@ describe('coach feedback URL parsing (app/my/page.tsx)', () => {
       expect(parts.map((p) => p.value).join('')).toBe(original)
     })
   })
+
+  describe('boundary and regression cases', () => {
+    it('captures trailing punctuation as part of the URL (non-space chars are included)', () => {
+      const parts = parseFeedbackParts('참고: https://example.com. 다음 문장.')
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe('https://example.com.')
+    })
+
+    it('includes port numbers as part of the URL', () => {
+      const url = 'https://example.com:8080/path'
+      const parts = parseFeedbackParts(`서버 주소: ${url} 입니다.`)
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe(url)
+    })
+
+    it('handles a tab character as whitespace between text and URL', () => {
+      const parts = parseFeedbackParts('링크:\thttps://example.com\t끝')
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe('https://example.com')
+    })
+
+    it('does not classify "http" without "://" as a URL', () => {
+      const parts = parseFeedbackParts('http 는 프로토콜입니다')
+      expect(parts.every((p) => p.type === 'text')).toBe(true)
+    })
+
+    it('handles percent-encoded characters in the URL', () => {
+      const url = 'https://example.com/path%20with%20spaces?q=hello%20world'
+      const parts = parseFeedbackParts(`보기: ${url} 완료`)
+      const urlPart = parts.find((p) => p.type === 'url')
+      expect(urlPart?.value).toBe(url)
+    })
+
+    it('roundtrip is preserved for multiline feedback with multiple URLs', () => {
+      const original = '1번 링크: https://first.com\n2번 링크: https://second.com\n끝'
+      const parts = parseFeedbackParts(original)
+      expect(parts.map((p) => p.value).join('')).toBe(original)
+      const urls = parts.filter((p) => p.type === 'url')
+      expect(urls).toHaveLength(2)
+    })
+  })
 })

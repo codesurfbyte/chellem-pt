@@ -165,8 +165,6 @@ describe('coach feedback URL parsing (app/my/page.tsx)', () => {
 
   describe('boundary and regression cases', () => {
     it('captures trailing punctuation as part of the URL (non-space chars are included)', () => {
-      // The regex [^\s]+ captures non-whitespace, so a trailing period is part of the URL.
-      // This documents the known behaviour so a future change is intentional.
       const parts = parseFeedbackParts('참고: https://example.com. 다음 문장.')
       const urlPart = parts.find((p) => p.type === 'url')
       expect(urlPart?.value).toBe('https://example.com.')

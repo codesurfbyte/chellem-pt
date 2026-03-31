@@ -192,6 +192,7 @@ export function useCancelBooking() {
       // 관련된 쿼리 무효화 (데이터 다시 불러오기)
       queryClient.invalidateQueries({ queryKey: ['bookings'] })
       queryClient.invalidateQueries({ queryKey: ['slots'] })
+      queryClient.invalidateQueries({ queryKey: ['userSlots'] })
     },
   })
 }

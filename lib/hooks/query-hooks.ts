@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { nextWeek } from '@/lib/utils'
-import type { TimeSlot, Booking } from '@/lib/types'
+import type { TimeSlot, Booking, SlotWithMeta } from '@/lib/types'
 import { getKstDayRange, getKstWeekRange } from '@/lib/utils'
 
 const supabase = createClient()
 
 export const QUERY_KEYS = {
   slots: (weekStart: string) => ['slots', weekStart] as const,
+  userSlots: (weekStart: string) => ['userSlots', weekStart] as const,
   bookings: (view: 'today' | 'week') => ['bookings', view] as const,
   policy: ['policy'] as const,
 }
@@ -107,7 +108,77 @@ export function useBookings(view: 'today' | 'week') {
   })
 }
 
-// 3. 예약 취소 뮤테이션
+// 3. 유저 슬롯 조회 훅 (WeeklyCalendar용 — /api/slots 경유)
+type UserSlotsData = {
+  slots: SlotWithMeta[]
+  remainingSessions: number
+  policy: { bookingHours: number; cancelHours: number }
+}
+
+export function useUserSlots(
+  weekStart: Date,
+  userId: string | null,
+  initialData?: UserSlotsData,
+) {
+  const weekStartISO = weekStart.toISOString()
+  const weekEndISO = nextWeek(weekStart).toISOString()
+
+  return useQuery({
+    queryKey: QUERY_KEYS.userSlots(weekStartISO),
+    queryFn: async (): Promise<UserSlotsData> => {
+      const params = new URLSearchParams({ weekStart: weekStartISO, weekEnd: weekEndISO })
+      const res = await fetch(`/api/slots?${params}`)
+      if (!res.ok) return { slots: [], remainingSessions: 0, policy: { bookingHours: 5, cancelHours: 5 } }
+      return res.json()
+    },
+    enabled: !!userId,
+    initialData,
+  })
+}
+
+// 4. 예약 뮤테이션
+export function useBookSlot() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (slotId: string) => {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'book', slotId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSlots'] })
+    },
+  })
+}
+
+// 5. 예약 취소 뮤테이션 (유저용 — /api/booking 경유)
+export function useCancelSlot() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (bookingId: string) => {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', bookingId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSlots'] })
+    },
+  })
+}
+
+// 6. 예약 취소 뮤테이션 (관리자용 — Supabase 직접)
 export function useCancelBooking() {
   const queryClient = useQueryClient()
 

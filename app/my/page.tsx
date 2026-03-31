@@ -12,6 +12,13 @@ function formatKST(dateStr: string, pattern: string) {
   return formatInTimeZone(parseISO(dateStr), TIME_ZONE, pattern, { locale: ko })
 }
 
+/**
+ * Renders the "My Schedule" page showing the authenticated user's profile, coach feedback, booking policy, upcoming bookings, and past bookings.
+ *
+ * Unauthenticated users are redirected to `/login?redirect=/my`. The component loads the user's profile, confirmed bookings, and booking policy, displays a policy banner, a profile card with remaining sessions, coach feedback where URLs are rendered as external links, a list of upcoming bookings (with cancel actions), and up to ten past bookings.
+ *
+ * @returns The page's React element containing the user's schedule UI.
+ */
 export default async function MyPage() {
   const supabase = await createClient()
   const {

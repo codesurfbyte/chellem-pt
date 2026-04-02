@@ -7,6 +7,7 @@ import NoticeManager from './NoticeManager'
 import BookingOverview from './BookingOverview'
 import PolicyManager from './PolicyManager'
 import StatsDashboard from './StatsDashboard'
+import VideoManager from './VideoManager'
 import { cn } from '@/lib/utils'
 
 const TABS = [
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'stats',    label: '통계',     icon: '📈' },
   { id: 'members',  label: '회원',     icon: '👥' },
   { id: 'notices',  label: '공지사항', icon: '📢' },
+  { id: 'videos',   label: '운동영상', icon: '🎥' },
   { id: 'policy',   label: '정책',     icon: '⚙️' },
 ] as const
 
@@ -51,6 +53,7 @@ export default function AdminTabs() {
         {activeTab === 'stats'    && <StatsDashboard />}
         {activeTab === 'members'  && <MemberManager />}
         {activeTab === 'notices'  && <NoticeManager />}
+        {activeTab === 'videos'   && <VideoManager />}
         {activeTab === 'policy'   && <PolicyManager />}
       </div>
     </div>

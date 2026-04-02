@@ -24,7 +24,7 @@ export default function NavBar() {
   const navLinks = [
     { href: '/', label: '홈' },
     { href: '/book', label: '예약하기' },
-    ...(user ? [{ href: '/my', label: '내 예약' }] : []),
+    ...(user ? [{ href: '/my', label: '내 예약' }, { href: '/videos', label: '운동영상' }] : []),
     ...(isAdmin ? [{ href: '/admin', label: '관리자' }] : []),
   ]
 

@@ -133,6 +133,7 @@ export default function VideoList({ initialData }: { initialData: ExerciseVideo[
                             <div key={i} className="aspect-video rounded-xl overflow-hidden bg-sand">
                               <iframe
                                 src={embedUrl}
+                                title={`${video.title} 영상 ${i + 1}`}
                                 className="w-full h-full"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen

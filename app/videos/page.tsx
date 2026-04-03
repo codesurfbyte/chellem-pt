@@ -11,12 +11,18 @@ export default async function VideosPage() {
 
   if (!user) redirect('/login?redirect=/videos')
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('exercise_videos')
     .select('*')
     .order('created_at', { ascending: false })
 
-  const videos: ExerciseVideo[] = data ?? []
+  if (error) {
+    console.error('exercise_videos fetch error:', error)
+  }
+
+  const videos: ExerciseVideo[] = Array.isArray(data)
+    ? data.filter((item) => Array.isArray(item.urls))
+    : []
 
   return (
     <div className="space-y-8">

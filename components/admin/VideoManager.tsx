@@ -95,18 +95,25 @@ export default function VideoManager() {
       category: form.category,
     }
 
-    if (editId) {
-      await updateVideo.mutateAsync({ id: editId, ...payload })
-    } else {
-      await createVideo.mutateAsync(payload)
+    try {
+      if (editId) {
+        await updateVideo.mutateAsync({ id: editId, ...payload })
+      } else {
+        await createVideo.mutateAsync(payload)
+      }
+      cancelForm()
+    } catch {
+      // React Query가 에러 상태를 관리하므로 별도 처리 불필요
     }
-
-    cancelForm()
   }
 
   async function handleDelete(id: string) {
-    await deleteVideo.mutateAsync(id)
-    setDeleteConfirmId(null)
+    try {
+      await deleteVideo.mutateAsync(id)
+      setDeleteConfirmId(null)
+    } catch {
+      // 에러 발생 시 확인 UI 유지 (사용자가 재시도 또는 취소 가능)
+    }
   }
 
   const filtered =
@@ -135,9 +142,14 @@ export default function VideoManager() {
       </div>
 
       {/* 에러 표시 */}
-      {(saveError || deleteError) && (
+      {saveError && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-600">
-          {(saveError || deleteError)?.message ?? '오류가 발생했습니다'}
+          저장 실패: {saveError.message ?? '오류가 발생했습니다'}
+        </div>
+      )}
+      {deleteError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-600">
+          삭제 실패: {deleteError.message ?? '오류가 발생했습니다'}
         </div>
       )}
 

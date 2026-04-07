@@ -117,7 +117,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-[#0A2540]/60 via-[#0A2540]/70 to-[#0A2540]/90" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[56vh] max-w-5xl items-center px-6 py-12 lg:py-16">
+        <div className="relative mx-auto flex min-h-[56vh] max-w-7xl items-center px-6 py-12 lg:py-16">
           <div className="grid w-full gap-10 lg:grid-cols-[1fr_320px] lg:gap-12 items-end">
 
             {/* Left: headline + CTA */}

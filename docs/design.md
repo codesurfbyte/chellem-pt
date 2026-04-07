@@ -143,7 +143,7 @@ Stripe Billing Plans 페이지를 레퍼런스로 한 디자인 시스템입니�
 
 ## 6. 레이아웃 (Layout)
 
-- 최대 너비: `max-w-5xl mx-auto px-6`
+- 최대 너비: `max-w-7xl mx-auto px-6`
 - 페이지 간격: `space-y-8` (섹션), `space-y-4` (카드 목록)
 - 그리드: `grid gap-6 lg:grid-cols-[1fr_288px]` (메인 + 사이드바)
 

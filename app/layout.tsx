@@ -44,9 +44,9 @@ export default function RootLayout({
       <body className="min-h-screen font-body text-ink bg-page">
         <Providers>
           <NavBar />
-          <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
+          <main className="max-w-7xl mx-auto px-6 py-10">{children}</main>
           <footer className="border-t border-mist mt-16">
-            <div className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between">
+            <div className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between">
               <span className="text-xs text-slate">© {new Date().getFullYear()} Chellem PT</span>
               <span className="text-xs text-slate">트레이닝 예약 시스템</span>
             </div>

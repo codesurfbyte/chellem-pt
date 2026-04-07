@@ -14,7 +14,6 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 - 서버 컴포넌트는 직접 SSR fetch 후 `initialData` 패턴으로 TanStack Query에 연결한다 (`useUserSlots`, `useExerciseVideos` 참고)
 - 전역 UI 상태는 Zustand, 로컬 UI 상태(열림/닫힘 등)는 `useState`
 - `supabase` 클라이언트는 모듈 레벨에서 한 번만 생성한다 (`lib/hooks/query-hooks.ts` 참고)
-- `supabase` 클라이언트는 모듈 레벨에서 한 번만 생성한다 (`lib/hooks/query-hooks.ts` 참고)
 
 ## 새 기능 추가 시
 
@@ -26,3 +25,4 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 
 ## main 브랜치에 PR시
 - PR 전에 빌드, 테스트 코드, e2e 테스트 후 완료후 main 브랜치와 merge 하는 PR 을 작성한다.
+- PR 본문에 "Generated with Claude Code" 문구를 포함하지 않는다.

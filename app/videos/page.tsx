@@ -18,6 +18,17 @@ export default async function VideosPage() {
 
   if (error) {
     console.error('exercise_videos fetch error:', error)
+    return (
+      <div className="space-y-8">
+        <div>
+          <p className="eyebrow">Exercise</p>
+          <h1 className="page-title mt-2">운동 영상</h1>
+        </div>
+        <div className="card p-8 text-center text-sm text-red-500">
+          영상을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+        </div>
+      </div>
+    )
   }
 
   const videos: ExerciseVideo[] = Array.isArray(data)
@@ -27,12 +38,9 @@ export default async function VideosPage() {
   return (
     <div className="space-y-8">
       <div>
-        <span className="text-xs font-semibold tracking-[0.14em] text-brand uppercase">
-          Exercise
-        </span>
-        <h1 className="font-display text-4xl font-bold text-ink mt-2 tracking-wide">
-          운동 영상
-        </h1>
+        <p className="eyebrow">Exercise</p>
+        <h1 className="page-title mt-2">운동 영상</h1>
+        <p className="mt-1.5 text-sm text-slate">트레이너가 업로드한 운동 영상을 확인하세요</p>
       </div>
       <VideoList initialData={videos} />
     </div>

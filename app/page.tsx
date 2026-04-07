@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import type { Notice, BookingPolicy } from '@/lib/types'
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale'
 import QrImage from '@/components/QrImage'
@@ -41,10 +41,11 @@ async function getNotices(): Promise<Notice[]> {
 
 async function getPolicy(): Promise<{ bookingHours: number; cancelHours: number }> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('booking_policy')
     .select('booking_hours, cancel_hours')
     .maybeSingle()
+  if (error) console.error('booking_policy fetch error:', error)
   return {
     bookingHours: (data as BookingPolicy | null)?.booking_hours ?? 5,
     cancelHours: (data as BookingPolicy | null)?.cancel_hours ?? 5,
@@ -251,7 +252,7 @@ export default async function HomePage() {
                         {notice.content}
                       </p>
                       <p className="mt-2.5 text-xs text-slate">
-                        {format(parseISO(notice.created_at), 'yyyy.MM.dd', { locale: ko })}
+                        {formatInTimeZone(parseISO(notice.created_at), TIME_ZONE, 'yyyy.MM.dd', { locale: ko })}
                       </p>
                     </div>
                   </div>

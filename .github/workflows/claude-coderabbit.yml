@@ -26,13 +26,30 @@ jobs:
       issues: write
 
     steps:
+      # issue_comment 이벤트는 pull_request 컨텍스트가 없으므로 REST API로 PR 헤드 SHA를 조회
+      - name: Get PR head SHA
+        id: pr-sha
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber =
+              context.payload.pull_request?.number ??
+              context.payload.issue?.number
+            if (!prNumber) core.setFailed('PR number not found')
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            })
+            core.setOutput('sha', pr.head.sha)
+            core.setOutput('ref', pr.head.ref)
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # PR 브랜치를 체크아웃
-          ref: ${{ github.event.pull_request.head.ref || github.event.issue.pull_request.url && 'HEAD' }}
+          ref: ${{ steps.pr-sha.outputs.sha }}
 
-      - uses: anthropics/claude-code-action@beta
+      - uses: anthropics/claude-code-action@6e2bd52842c65e914eba5c8badd17560bd26b5de
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           direct_prompt: |

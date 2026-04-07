@@ -18,6 +18,17 @@ export default async function VideosPage() {
 
   if (error) {
     console.error('exercise_videos fetch error:', error)
+    return (
+      <div className="space-y-8">
+        <div>
+          <p className="eyebrow">Exercise</p>
+          <h1 className="page-title mt-2">운동 영상</h1>
+        </div>
+        <div className="card p-8 text-center text-sm text-red-500">
+          영상을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+        </div>
+      </div>
+    )
   }
 
   const videos: ExerciseVideo[] = Array.isArray(data)

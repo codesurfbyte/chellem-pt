@@ -35,7 +35,7 @@ export default function NavBar() {
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           {/* 브랜드 아이콘 — Stripe 스타일 라운드 사각형 */}
           <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center shrink-0 shadow-sm">
-            <span className="text-white font-bold text-l select-none">C</span>
+            <span className="text-white font-bold text-lg select-none">C</span>
           </div>
           <div className="leading-[1.2]">
             <span className="block font-semibold text-sm text-ink tracking-[-0.01em]">

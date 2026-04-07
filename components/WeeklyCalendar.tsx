@@ -57,25 +57,28 @@ export default function WeeklyCalendar({
 
   const bookMutation = useBookSlot()
   const cancelMutation = useCancelSlot()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleBook = async (slotId: string) => {
     if (!userId) return
     if (remainingSessions <= 0) {
-      alert('잔여 횟수가 없습니다. 관리자에게 문의해주세요.')
+      setErrorMessage('잔여 횟수가 없습니다. 관리자에게 문의해주세요.')
       return
     }
     try {
       await bookMutation.mutateAsync(slotId)
+      setErrorMessage(null)
     } catch (e: any) {
-      alert(e.message || '예약 중 오류가 발생했습니다.')
+      setErrorMessage(e.message || '예약 중 오류가 발생했습니다.')
     }
   }
 
   const handleCancel = async (bookingId: string) => {
     try {
       await cancelMutation.mutateAsync(bookingId)
+      setErrorMessage(null)
     } catch (e: any) {
-      alert(e.message || '취소 중 오류가 발생했습니다.')
+      setErrorMessage(e.message || '취소 중 오류가 발생했습니다.')
     }
   }
 
@@ -144,6 +147,19 @@ export default function WeeklyCalendar({
         cancelHours={policy.cancelHours}
         sticky
       />
+
+      {errorMessage && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-center justify-between gap-3">
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-red-400 hover:text-red-600 shrink-0"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* 캘린더 */}
       {loading ? (

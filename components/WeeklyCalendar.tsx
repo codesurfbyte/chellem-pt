@@ -37,6 +37,7 @@ export default function WeeklyCalendar({
   const [now, setNow] = useState(() => initialNow)
   const [weekStart, setWeekStart] = useState(() => getWeekStart(initialNow))
   const [userId] = useState<string | null>(initialUserId ?? null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     setNow(new Date())
@@ -110,6 +111,18 @@ export default function WeeklyCalendar({
 
   return (
     <div className="space-y-5">
+      {errorMessage && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="shrink-0 text-red-400 hover:text-red-600"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* 주 네비게이션 */}
       <div className="flex items-center justify-between gap-4">
         <button

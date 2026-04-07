@@ -156,7 +156,7 @@ Stripe Billing Plans 페이지를 레퍼런스로 한 디자인 시스템입니�
 ```tsx
 <Link href="/" className="flex items-center gap-2.5 shrink-0">
   <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center shrink-0 shadow-sm">
-    <span className="text-white font-bold text-l select-none">C</span>
+    <span className="text-white font-bold text-lg select-none">C</span>
   </div>
   <div className="leading-[1.2]">
     <span className="block font-semibold text-sm text-ink tracking-[-0.01em]">Chellem PT</span>

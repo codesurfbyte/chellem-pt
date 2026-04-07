@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css');
 
 @tailwind base;
@@ -5,17 +6,30 @@
 @tailwind utilities;
 
 :root {
-  --font-display: 'Spoqa Han Sans Neo', 'Spoqa Han Sans JP', sans-serif;
-  --font-body: 'Spoqa Han Sans Neo', 'Spoqa Han Sans JP', sans-serif;
-  --brand: #018786;
-  --brand-dark: #016A6A;
-  --brand-soft: #E3F4F4;
-  --canvas: #FFFFFF;
-  --surface: #FFFFFF;
-  --surface-2: #F7F7F7;
-  --border: #E7E7E7;
-  --ink: #222222;
-  --muted: #6B6B6B;
+  --font-display: 'Inter', 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    'Inter', 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Stripe-inspired design tokens */
+  --brand:        #635BFF;
+  --brand-dark:   #4F46E5;
+  --brand-light:  #EEF2FF;
+
+  --ink:          #0A2540;   /* deep navy — Stripe's primary text */
+  --body:         #425466;   /* body text */
+  --muted:        #697386;   /* secondary/muted */
+
+  --canvas:       #FFFFFF;
+  --surface:      #FFFFFF;
+  --page:         #F6F9FC;   /* Stripe page background */
+  --border:       #E3E8EE;
+  --border-dark:  #C1C9D2;
+
+  --success:      #00A96E;
+  --accent:       #00D4FF;
+
+  /* Shadow tokens */
+  --shadow-card:  0px 2px 5px rgba(0,0,0,0.05), 0px 0px 0px 1px rgba(0,0,0,0.06);
+  --shadow-hover: 0px 4px 12px rgba(0,0,0,0.08), 0px 0px 0px 1px rgba(0,0,0,0.06);
 }
 
 * {
@@ -24,82 +38,117 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 14px; /* base = 14px so rem-based values stay consistent */
 }
 
 body {
-  background-color: var(--canvas);
+  background-color: var(--page);
   color: var(--ink);
   font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.57;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 스크롤바 커스텀 */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: var(--surface-2);
-}
-::-webkit-scrollbar-thumb {
-  background: #D6D6D6;
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #C5C5C5;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--page); }
+::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 @layer components {
+
+  /* ───── Buttons ───── */
+
+  /* Primary: Stripe indigo/purple */
   .btn-primary {
-    @apply bg-brand text-white font-semibold px-6 py-3 rounded-md 
-           hover:bg-brand-dark active:scale-[0.98] transition-all duration-150
-           font-body text-sm tracking-normal shadow-sm;
+    @apply inline-flex items-center justify-center
+           bg-brand text-white font-semibold
+           px-4 py-2 rounded-md text-sm
+           hover:bg-brand-dark active:scale-[0.98]
+           transition-all duration-150
+           shadow-btn;
   }
 
+  /* Secondary: white surface, border */
   .btn-secondary {
-    @apply bg-surface text-ink font-medium px-6 py-3 rounded-md 
-           border border-mist hover:border-brand/40 hover:text-brand
-           active:scale-[0.98] transition-all duration-150 text-sm;
+    @apply inline-flex items-center justify-center
+           bg-surface text-ink font-medium
+           px-4 py-2 rounded-md text-sm
+           border border-mist hover:border-mist-dark hover:bg-page
+           active:scale-[0.98] transition-all duration-150
+           shadow-btn;
   }
 
+  /* Danger */
   .btn-danger {
-    @apply bg-red-50 text-red-600 font-medium px-4 py-2 rounded-md 
+    @apply inline-flex items-center justify-center
+           bg-red-50 text-red-600 font-medium
+           px-4 py-2 rounded-md text-sm
            border border-red-200 hover:bg-red-100
-           active:scale-[0.98] transition-all duration-150 text-sm;
+           active:scale-[0.98] transition-all duration-150;
   }
 
+  /* ───── Cards ───── */
+
+  /* Standard card — white surface, Stripe shadow */
   .card {
-    @apply bg-surface border border-mist rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)];
+    @apply bg-surface rounded-card shadow-card;
   }
 
+  /* Elevated card — slightly more prominent */
   .card-elevated {
-    @apply bg-sand border border-mist rounded-lg shadow-[0_2px_6px_rgba(0,0,0,0.06)];
+    @apply bg-surface rounded-card shadow-card-hover;
   }
+
+  /* ───── Form elements ───── */
 
   .input {
-    @apply bg-surface border border-mist rounded-md px-4 py-3
-           text-ink placeholder-slate/70 text-sm
-           focus:outline-none focus:border-brand/70 focus:ring-2 focus:ring-brand/20
+    @apply bg-surface border border-mist rounded-md px-3 py-2
+           text-ink placeholder-slate/60 text-sm
+           focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20
            transition-all duration-150 w-full;
   }
 
   .label {
-    @apply text-xs font-medium text-slate tracking-wide mb-2 block;
+    @apply text-xs font-medium text-slate uppercase tracking-[0.06em] mb-1.5 block;
   }
 
+  /* ───── Badges ───── */
+
+  /* Available — 파스텔 teal 배경 + 진한 teal 텍스트, 테두리 없음 */
   .badge-available {
-    @apply bg-brand/10 text-brand border border-brand/20 
-           text-xs px-2 py-0.5 rounded-full font-medium;
+    @apply bg-cyan-100 text-cyan-700
+           text-xs px-2 py-0.5 rounded-badge font-medium;
   }
 
+  /* Booked — 파스텔 보라 배경 + 진한 보라 텍스트 */
   .badge-booked {
-    @apply bg-sky-100 text-sky-700 border border-sky-200 
-           text-xs px-2 py-0.5 rounded-full font-medium;
+    @apply bg-violet-100 text-violet-700
+           text-xs px-2 py-0.5 rounded-badge font-medium;
   }
 
+  /* Full / disabled — 중립 회색 */
   .badge-full {
-    @apply bg-gray-100 text-gray-500 border border-gray-200 
-           text-xs px-2 py-0.5 rounded-full font-medium;
+    @apply bg-gray-100 text-gray-500
+           text-xs px-2 py-0.5 rounded-badge font-medium;
+  }
+
+  /* ───── Typography helpers ───── */
+
+  /* Section eyebrow label — e.g. "SCHEDULE" */
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.1em] uppercase text-brand;
+  }
+
+  /* Page title */
+  .page-title {
+    @apply text-4xl font-bold text-ink tracking-[-0.02em];
+  }
+
+  /* Section divider */
+  .divider {
+    @apply border-t border-mist;
   }
 }

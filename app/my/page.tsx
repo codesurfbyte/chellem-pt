@@ -93,7 +93,25 @@ export default async function MyPage() {
         </div>
         {profile?.coach_feedback ? (
           <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">
-            {profile.coach_feedback}
+            {profile.coach_feedback.split(/(https?:\/\/[^\s]+)/g).map((part: string, i: number) => {
+              if (!/^https?:\/\//.test(part)) return part
+              const match = part.match(/^(https?:\/\/.*?[^)\],.!?])([)\],.!?]*)$/)
+              const url = match ? match[1] : part
+              const trailing = match ? match[2] : ''
+              return (
+                <span key={i}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand underline underline-offset-2 break-all"
+                  >
+                    {url}
+                  </a>
+                  {trailing}
+                </span>
+              )
+            })}
           </p>
         ) : (
           <p className="text-sm text-slate">

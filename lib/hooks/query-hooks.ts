@@ -209,7 +209,35 @@ export function useCreateVideo() {
   })
 }
 
-// 8. 예약 취소 뮤테이션 (관리자용 — Supabase 직접)
+// 8. 운동 영상 수정 뮤테이션
+export function useUpdateVideo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Omit<ExerciseVideo, 'created_at'>) => {
+      const { error } = await supabase.from('exercise_videos').update(payload).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.videos })
+    },
+  })
+}
+
+// 9. 운동 영상 삭제 뮤테이션
+export function useDeleteVideo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('exercise_videos').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.videos })
+    },
+  })
+}
+
+// 10. 예약 취소 뮤테이션 (관리자용 — Supabase 직접)
 export function useCancelBooking() {
   const queryClient = useQueryClient()
 

@@ -106,34 +106,34 @@ export default function WeeklyCalendar({
   const loading = isLoading && !hasInitialData
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* 주 네비게이션 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <button
           onClick={() => setWeekStart(prevWeek(weekStart))}
           disabled={isCurrentWeek}
           className={cn(
-            'w-9 h-9 rounded-full flex items-center justify-center transition-all',
+            'w-8 h-8 rounded-md flex items-center justify-center text-sm transition-all border',
             isCurrentWeek
-              ? 'text-slate/40 cursor-not-allowed'
-              : 'text-slate hover:text-ink hover:bg-brand/10'
+              ? 'text-slate/30 cursor-not-allowed border-mist'
+              : 'text-slate hover:text-ink hover:bg-page border-mist hover:border-mist-dark'
           )}
         >
           ←
         </button>
         <div className="text-center">
-          <p className="text-ink font-medium text-sm">
+          <p className="text-sm font-semibold text-ink">
             {formatWeekRange(weekStart)}
           </p>
           {isCurrentWeek && (
-            <span className="text-[10px] text-brand font-medium tracking-wide">
+            <span className="text-xs text-brand font-medium">
               이번 주
             </span>
           )}
         </div>
         <button
           onClick={() => setWeekStart(nextWeek(weekStart))}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-slate hover:text-ink hover:bg-brand/10 transition-all"
+          className="w-8 h-8 rounded-md flex items-center justify-center text-sm text-slate hover:text-ink hover:bg-page border border-mist hover:border-mist-dark transition-all"
         >
           →
         </button>
@@ -147,30 +147,28 @@ export default function WeeklyCalendar({
 
       {/* 캘린더 */}
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="card p-4 animate-pulse">
-              <div className="h-4 bg-sand rounded w-20 mb-3" />
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div key={i} className="card overflow-hidden animate-pulse">
+              <div className="h-10 bg-page border-b border-mist" />
+              <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-2">
                 {[...Array(3)].map((_, j) => (
-                  <div key={j} className="h-16 bg-sand rounded-lg" />
+                  <div key={j} className="h-[88px] bg-page rounded-md" />
                 ))}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {isFetching && !isLoading && (
-            <div className="text-xs text-slate">
-              업데이트 중...
-            </div>
+            <p className="text-xs text-slate">업데이트 중...</p>
           )}
           {slotsByDay.map(({ day, slots: daySlots }) => (
             <div key={day.toISOString()} className="card overflow-hidden">
-              {/* 날짜 헤더 */}
-              <div className="px-4 py-3 border-b border-mist flex items-center justify-between bg-surface/70">
-                <span className="font-display font-semibold text-ink tracking-wide text-sm">
+              {/* 날짜 헤더 — Stripe card header band */}
+              <div className="px-4 py-2.5 border-b border-mist bg-page flex items-center justify-between">
+                <span className="text-sm font-semibold text-ink">
                   {formatDate(day)}
                 </span>
                 <span className="text-xs text-slate">
@@ -183,7 +181,7 @@ export default function WeeklyCalendar({
               {/* 슬롯 목록 */}
               <div className="p-4">
                 {daySlots.length === 0 ? (
-                  <p className="text-slate text-sm text-center py-2">
+                  <p className="text-sm text-slate text-center py-3">
                     등록된 시간 슬롯이 없습니다
                   </p>
                 ) : (
@@ -206,20 +204,20 @@ export default function WeeklyCalendar({
                         <div
                           key={slot.id}
                           className={cn(
-                            'rounded-lg p-3 border transition-all duration-150',
+                            'rounded-md p-3 border transition-shadow duration-150',
                             isMyBooking
-                              ? 'bg-sky-100 border-sky-200'
+                              ? 'bg-brand-soft border-brand/25'
                               : isUnavailable
-                                ? 'bg-sand border-mist'
-                                : 'bg-surface border-mist hover:border-brand/30'
+                                ? 'bg-page border-mist'
+                                : 'bg-surface border-mist hover:shadow-card-hover'
                           )}
                         >
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-1.5">
                             <span
                               className={cn(
-                                'font-display font-semibold text-lg tracking-wide',
+                                'text-lg font-bold tracking-[-0.02em]',
                                 isMyBooking
-                                  ? 'text-sky-700'
+                                  ? 'text-brand'
                                   : isUnavailable
                                     ? 'text-slate'
                                     : 'text-ink'
@@ -247,40 +245,25 @@ export default function WeeklyCalendar({
                           {!isPastSlot && (
                             isMyBooking ? (
                               <button
-                                onClick={() =>
-                                  handleCancel(slot.my_booking!.id)
-                                }
+                                onClick={() => handleCancel(slot.my_booking!.id)}
                                 disabled={isActioning || isCancelClosed}
-                                className="w-full text-xs py-1.5 rounded-full text-sky-700
-                                           border border-sky-200 hover:bg-sky-100
-                                           transition-all disabled:opacity-50"
+                                className="w-full text-xs py-1.5 rounded-md
+                                           text-brand border border-brand/25
+                                           hover:bg-brand-light
+                                           transition-all disabled:opacity-40"
                               >
-                                {isActioning
-                                  ? '처리 중...'
-                                  : isCancelClosed
-                                    ? '취소 불가'
-                                    : '예약 취소'}
+                                {isActioning ? '처리 중...' : isCancelClosed ? '취소 불가' : '예약 취소'}
                               </button>
                             ) : !isUnavailable ? (
                               <button
                                 onClick={() => handleBook(slot.id)}
-                                disabled={
-                                  isActioning ||
-                                  remainingSessions === 0 ||
-                                  isBookingClosed
-                                }
-                                className="w-full text-xs py-1.5 rounded-full
-                                           bg-brand/10 text-brand
-                                           border border-brand/20 hover:bg-brand/20
-                                           transition-all disabled:opacity-50"
+                                disabled={isActioning || remainingSessions === 0 || isBookingClosed}
+                                className="w-full text-xs py-1.5 rounded-md
+                                           bg-brand text-white font-medium
+                                           hover:bg-brand-dark
+                                           transition-all disabled:opacity-40"
                               >
-                                {isActioning
-                                  ? '처리 중...'
-                                  : remainingSessions === 0
-                                    ? '횟수 없음'
-                                    : isBookingClosed
-                                      ? '마감'
-                                      : '예약하기'}
+                                {isActioning ? '처리 중...' : remainingSessions === 0 ? '횟수 없음' : isBookingClosed ? '마감' : '예약하기'}
                               </button>
                             ) : null
                           )}
@@ -296,15 +279,15 @@ export default function WeeklyCalendar({
       )}
 
       {/* 범례 */}
-      <div className="flex flex-wrap gap-4 text-xs text-slate pt-2">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-brand/60" /> 예약 가능
+      <div className="flex flex-wrap gap-5 text-xs text-slate pt-1 border-t border-mist">
+        <span className="flex items-center gap-1.5 pt-3">
+          <span className="w-2 h-2 rounded-sm bg-brand" /> 예약 가능
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-sky-400/60" /> 내 예약
+        <span className="flex items-center gap-1.5 pt-3">
+          <span className="w-2 h-2 rounded-sm bg-brand/30" /> 내 예약
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-gray-400" /> 마감/종료
+        <span className="flex items-center gap-1.5 pt-3">
+          <span className="w-2 h-2 rounded-sm bg-mist-dark" /> 마감/종료
         </span>
       </div>
     </div>

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     description: 'Chellem PT - 트레이닝 시간을 간편하게 예약하세요',
     images: [
       {
-        url: '/coachly-logo.png',
+        url: '/chellem_logo.png',
         width: 1024,
         height: 1024,
         alt: 'Chellem PT Logo',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'Chellem PT - 예약 센터',
     description: 'Chellem PT - 트레이닝 시간을 간편하게 예약하세요',
-    images: ['/coachly-logo.png'],
+    images: ['/chellem_logo.png'],
   },
 }
 

@@ -42,10 +42,10 @@ async function getNotices(): Promise<Notice[]> {
 async function getPolicy(): Promise<{ bookingHours: number; cancelHours: number }> {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('booking_policy')
+    .from('booking_policies')
     .select('booking_hours, cancel_hours')
     .maybeSingle()
-  if (error) console.error('booking_policy fetch error:', error)
+  if (error) console.error('booking_policies fetch error:', error)
   return {
     bookingHours: (data as BookingPolicy | null)?.booking_hours ?? 5,
     cancelHours: (data as BookingPolicy | null)?.cancel_hours ?? 5,

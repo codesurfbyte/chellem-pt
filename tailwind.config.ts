@@ -52,7 +52,9 @@ const config: Config = {
         pill: '9999px',
       },
       fontSize: {
-        // Minimum 12px per spec
+        // NOTE: Custom scale intentionally deviates from Tailwind defaults to enforce a minimum
+        // 12px policy and align with the Stripe design system.
+        // text-xs=12px, text-sm=13px (default: 14px), text-base=14px (default: 16px), text-lg=16px (default: 18px)
         xs: ['12px', { lineHeight: '1.5', letterSpacing: '0.01em' }],
         sm: ['13px', { lineHeight: '1.5' }],
         base: ['14px', { lineHeight: '1.57' }],

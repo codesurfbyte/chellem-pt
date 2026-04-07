@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Inter is loaded via next/font/google in app/layout.tsx — no external import needed */
 @import url('//spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css');
 
 @tailwind base;
@@ -6,8 +6,8 @@
 @tailwind utilities;
 
 :root {
-  --font-display: 'Inter', 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body:    'Inter', 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: var(--font-inter), 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    var(--font-inter), 'Spoqa Han Sans Neo', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Stripe-inspired design tokens */
   --brand:        #635BFF;
@@ -45,17 +45,23 @@ body {
   background-color: var(--page);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 14px;
+  /* font-size inherited from html (14px) — no duplicate declaration */
   line-height: 1.57;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar */
+/* Scrollbar — WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--page); }
 ::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Scrollbar — Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-dark) var(--page);
+}
 
 @layer components {
 
@@ -132,6 +138,12 @@ body {
   /* Full / disabled — 중립 회색 */
   .badge-full {
     @apply bg-gray-100 text-gray-500
+           text-xs px-2 py-0.5 rounded-badge font-medium;
+  }
+
+  /* Pinned notice — amber tint (badge-booked는 예약 상태 전용으로 유지) */
+  .badge-pinned {
+    @apply bg-amber-100 text-amber-700
            text-xs px-2 py-0.5 rounded-badge font-medium;
   }
 

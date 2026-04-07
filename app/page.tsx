@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import type { Notice } from '@/lib/types'
+import type { Notice, BookingPolicy } from '@/lib/types'
 import { format, parseISO } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { ko } from 'date-fns/locale'
+import QrImage from '@/components/QrImage'
 
 const TIME_ZONE = 'Asia/Seoul'
 
@@ -38,12 +39,24 @@ async function getNotices(): Promise<Notice[]> {
   return data ?? []
 }
 
+async function getPolicy(): Promise<{ bookingHours: number; cancelHours: number }> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('booking_policy')
+    .select('booking_hours, cancel_hours')
+    .maybeSingle()
+  return {
+    bookingHours: (data as BookingPolicy | null)?.booking_hours ?? 5,
+    cancelHours: (data as BookingPolicy | null)?.cancel_hours ?? 5,
+  }
+}
+
 export default async function HomePage() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const notices = await getNotices()
+  const [notices, policy] = await Promise.all([getNotices(), getPolicy()])
   const qrUrl =
     'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fchellem-pt.vercel.app%2F'
 
@@ -115,7 +128,7 @@ export default async function HomePage() {
                 PT 예약 경험
               </h1>
               <p className="mt-4 text-base text-white/70 max-w-md leading-relaxed">
-                수업 시작 5시간 전까지 예약과 취소를 자유롭게 관리하세요.
+                수업 시작 {policy.bookingHours}시간 전까지 예약과 취소를 자유롭게 관리하세요.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
@@ -165,7 +178,7 @@ export default async function HomePage() {
                       </span>
                     )}
                     <span className="rounded-md border border-white/10 bg-white/6 px-2.5 py-1.5 text-xs text-white/80">
-                      5시간 전 변경 가능
+                      {policy.cancelHours}시간 전 변경 가능
                     </span>
                   </div>
                 </div>
@@ -175,7 +188,7 @@ export default async function HomePage() {
                     아직 예정된 PT가 없습니다. 이번 주 시간표를 확인하고 예약해보세요.
                   </p>
                   <span className="inline-block rounded-md border border-white/10 bg-white/6 px-2.5 py-1.5 text-xs text-white/80">
-                    5시간 전까지 예약 가능
+                    {policy.bookingHours}시간 전까지 예약 가능
                   </span>
                 </div>
               ) : (
@@ -231,7 +244,7 @@ export default async function HomePage() {
                           {notice.title}
                         </h3>
                         {notice.is_pinned && (
-                          <span className="badge-booked">고정</span>
+                          <span className="badge-pinned">고정</span>
                         )}
                       </div>
                       <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-body">
@@ -271,12 +284,7 @@ export default async function HomePage() {
 
               <div className="flex flex-col items-center gap-2">
                 <span className="text-xs text-slate">QR로 접속하기</span>
-                <img
-                  src={qrUrl}
-                  alt="chellem-pt QR 코드"
-                  className="h-36 w-36 rounded-lg border border-mist bg-white"
-                  loading="lazy"
-                />
+                <QrImage src={qrUrl} alt="chellem-pt QR 코드" />
                 <span className="text-xs text-slate/70">
                   chellem-pt.vercel.app
                 </span>
@@ -295,8 +303,8 @@ export default async function HomePage() {
             </p>
             <ul className="space-y-2 text-sm text-body">
               {[
-                '예약은 수업 시작 5시간 전까지',
-                '취소는 수업 시작 5시간 전까지',
+                `예약은 수업 시작 ${policy.bookingHours}시간 전까지`,
+                `취소는 수업 시작 ${policy.cancelHours}시간 전까지`,
                 '잔여 횟수 소진 시 예약 불가',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">

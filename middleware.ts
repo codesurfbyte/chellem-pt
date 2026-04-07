@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // 보호된 경로 - 로그인 필요
-  const protectedPaths = ['/book', '/my', '/admin']
+  const protectedPaths = ['/book', '/my', '/admin', '/videos']
   const isProtected = protectedPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)
   )

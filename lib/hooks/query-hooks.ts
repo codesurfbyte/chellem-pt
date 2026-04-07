@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { nextWeek } from '@/lib/utils'
-import type { TimeSlot, Booking, SlotWithMeta } from '@/lib/types'
+import type { TimeSlot, Booking, SlotWithMeta, ExerciseVideo } from '@/lib/types'
 import { getKstDayRange, getKstWeekRange } from '@/lib/utils'
 
 const supabase = createClient()
@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
   userSlots: (weekStart: string) => ['userSlots', weekStart] as const,
   bookings: (view: 'today' | 'week') => ['bookings', view] as const,
   policy: ['policy'] as const,
+  videos: ['videos'] as const,
 }
 
 // 0. 정책 조회 훅
@@ -178,7 +179,37 @@ export function useCancelSlot() {
   })
 }
 
-// 6. 예약 취소 뮤테이션 (관리자용 — Supabase 직접)
+// 6. 운동 영상 조회 훅
+export function useExerciseVideos(initialData?: ExerciseVideo[]) {
+  return useQuery({
+    queryKey: QUERY_KEYS.videos,
+    queryFn: async (): Promise<ExerciseVideo[]> => {
+      const { data, error } = await supabase
+        .from('exercise_videos')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data ?? []
+    },
+    initialData,
+  })
+}
+
+// 7. 운동 영상 생성 뮤테이션
+export function useCreateVideo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Omit<ExerciseVideo, 'id' | 'created_at'>) => {
+      const { error } = await supabase.from('exercise_videos').insert(payload)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.videos })
+    },
+  })
+}
+
+// 8. 예약 취소 뮤테이션 (관리자용 — Supabase 직접)
 export function useCancelBooking() {
   const queryClient = useQueryClient()
 

@@ -50,3 +50,12 @@ export type BookingPolicy = {
   cancel_hours: number
   updated_at: string
 }
+
+export type ExerciseVideo = {
+  id: string
+  title: string
+  content: string | null
+  urls: string[]
+  category: string
+  created_at: string
+}

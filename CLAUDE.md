@@ -15,6 +15,14 @@ Use the /browse skill from gstack for all web browsing. Never use mcp__claude-in
 - 전역 UI 상태는 Zustand, 로컬 UI 상태(열림/닫힘 등)는 `useState`
 - `supabase` 클라이언트는 모듈 레벨에서 한 번만 생성한다 (`lib/hooks/query-hooks.ts` 참고)
 
+## 기능 구현 전 필수 절차
+
+기능 추가 또는 수정 요청을 받으면 코드를 작성하기 전에 반드시 다음 순서를 따른다:
+
+1. **아키텍처 및 전략 설명**: 구현 방식, 파일 구조, 데이터 흐름, 관련 기술 선택 이유를 먼저 설명한다
+2. **사용자 동의 대기**: 설명 후 사용자의 명시적 동의("진행해줘", "ok", "좋아" 등)를 받은 후에만 코드를 작성한다
+3. 동의 없이 먼저 코드를 작성하지 않는다
+
 ## 새 기능 추가 시
 
 - 데이터 페칭/뮤테이션 훅은 `lib/hooks/query-hooks.ts`에 추가한다
